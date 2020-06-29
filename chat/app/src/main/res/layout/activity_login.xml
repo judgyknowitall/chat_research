@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".login"
+    android:background="@drawable/background_gradient">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/login_startMargin"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.2"/>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/login_endMargin"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.8" />
+
+    <ImageView
+        android:id="@+id/login_logo"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/ic_chat"
+        android:tint="@color/colorPrimaryDark"
+        android:layout_margin="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/chat_logo" />
+
+    <EditText
+        android:id="@+id/login_input"
+        style="@style/StandardEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="@string/input_username"
+        android:autofillHints=""
+        android:inputType="text"
+        app:layout_constraintStart_toStartOf="@id/login_startMargin"
+        app:layout_constraintEnd_toEndOf="@id/login_endMargin"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.4"/>
+
+    <Button
+        android:id="@+id/login_button"
+        style="@style/StandardButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/login"
+        app:layout_constraintStart_toStartOf="@id/login_startMargin"
+        app:layout_constraintEnd_toEndOf="@id/login_endMargin"
+        app:layout_constraintTop_toBottomOf="@id/login_input"
+        android:layout_marginTop="16dp"/>
+
+    <ProgressBar
+        android:id="@+id/login_progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="@id/login_startMargin"
+        app:layout_constraintEnd_toEndOf="@id/login_endMargin"
+        app:layout_constraintTop_toBottomOf="@id/login_input"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

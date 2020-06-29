@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "692089896960",
+    "firebase_url": "https://chat-research-a5321.firebaseio.com",
+    "project_id": "chat-research-a5321",
+    "storage_bucket": "chat-research-a5321.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692089896960:android:08bf51745f563cc13e98e5",
+        "android_client_info": {
+          "package_name": "ivy.learn.chat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "692089896960-64matpmdr7s8ofpvckdp61kdfiea5bdk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD7yJa4P3CbXsfha5TXoLH1pLgKa19Rqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "692089896960-64matpmdr7s8ofpvckdp61kdfiea5bdk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
