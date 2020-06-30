@@ -19,13 +19,14 @@
             android:layout_height="30dp"
             android:src="@drawable/ic_logout"
             android:scaleType="fitXY"
-            android:background="transparent"
+            android:background="@android:color/transparent"
             android:contentDescription="@string/logout"
             android:onClick="logoutUser"
             android:layout_gravity="start"
             android:layout_marginStart="16dp"/>
 
         <TextView
+            android:id="@+id/lobby_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/StandardTextLight"
@@ -37,7 +38,7 @@
             android:layout_height="30dp"
             android:src="@drawable/ic_new_chat"
             android:scaleType="fitXY"
-            android:background="transparent"
+            android:background="@android:color/transparent"
             android:contentDescription="@string/create_new_chat_room"
             android:onClick="newChatRoom"
             android:layout_gravity="end"
@@ -46,6 +47,7 @@
     </Toolbar>
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/lobby_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toBottomOf="@id/lobby_toolbar"
