@@ -3,4 +3,8 @@
     <string name="input_username">Input Username</string>
     <string name="login">Login</string>
     <string name="chat_logo">Chat Logo</string>
+    <string name="username">Username</string>
+    <string name="logout">logout</string>
+    <string name="create_new_chat_room">create new Chat Room</string>
+    <string name="chat_room_name">Chat room Name</string>
 </resources>
