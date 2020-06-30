@@ -4,14 +4,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,7 +31,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
     // Other Values
     private User this_user;
-    private List<ChatRoom> chat_rooms = new ArrayList<>();
+    private List<ChatRoom> chatrooms = new ArrayList<>();
 
 
 /* Overridden Methods
@@ -45,8 +41,8 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_lobby);
-
         getIntentExtras();
+
         if (this_user != null) {
             initViews();
             initRecycler();
@@ -72,7 +68,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     }
 
     private void initRecycler(){
-        adapter = new LobbyAdapter(chat_rooms);
+        adapter = new LobbyAdapter(chatrooms);
         adapter.setOnUserItemClickListener(this);
         RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
         rv_chat_rooms.setLayoutManager(manager);
@@ -97,15 +93,18 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         Toast.makeText(this, "New chat room WIP", Toast.LENGTH_SHORT).show();
     }
 
+    // Go to chatroom
     @Override
     public void onShortClick(int position) {
-        Toast.makeText(this, "Clicked on: " + chat_rooms.get(position), Toast.LENGTH_SHORT).show();
-        // TODO intent to chatroom
+        Intent intent = new Intent(this, ChatRoomActivity.class);
+        intent.putExtra("chatroom", chatrooms.get(position));
+        intent.putExtra("this_user", this_user);
+        startActivity(intent);
     }
 
     @Override
     public void onLongClick(int position) {
-        Toast.makeText(this, "Delete? " + chat_rooms.get(position), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Delete? " + chatrooms.get(position), Toast.LENGTH_SHORT).show();
         // TODO delete chatroom option
     }
 
@@ -125,8 +124,8 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                if (task.isSuccessful() && task.getResult() != null) {
                    ChatRoom chatRoom = task.getResult().toObject(ChatRoom.class);
                    if (chatRoom != null){
-                       chat_rooms.add(chatRoom);
-                       adapter.notifyItemInserted(chat_rooms.size()-1);
+                       chatrooms.add(chatRoom);
+                       adapter.notifyItemInserted(chatrooms.size()-1);
                    }
                    else Log.e(TAG, "Chatroom was null! " + chatroom_address);
                }
