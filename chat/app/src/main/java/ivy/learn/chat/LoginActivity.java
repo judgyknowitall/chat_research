@@ -4,15 +4,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import ivy.learn.chat.entities.User;
 
 /**
  * Currently user can pick a name. [NO AUTH]
@@ -41,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         initViews();
+        loadPreferences();
         //establishKey();     // To get Custom token
     }
 
@@ -52,6 +60,15 @@ public class LoginActivity extends AppCompatActivity {
         name_input = findViewById(R.id.login_input);
         login_button = findViewById(R.id.login_button);
         loading_bar = findViewById(R.id.login_progressBar);
+
+        // Login if pressed [ENTER]
+        name_input.setOnEditorActionListener((textView, id, keyEvent) -> {
+            if (id == R.id.login_button || id == EditorInfo.IME_NULL) {
+                loginUser(textView);
+                return true;
+            }
+            else return false;
+        });
     }
 
 
@@ -104,11 +121,28 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void transitionToMain(User user){
+        savePreferences(user.getUsername());
+
         Intent intent = new Intent(this, ChatLobbyActivity.class);
         intent.putExtra("this_user", user);
         loading(false);
         startActivity(intent);
         finish();
+    }
+
+    private void savePreferences(String username){
+        SharedPreferences prefs = getSharedPreferences("ChatResearch", 0);
+        prefs.edit().putString("username", username).apply();
+    }
+
+    private void loadPreferences(){
+        SharedPreferences prefs = getSharedPreferences("ChatResearch", 0);
+        String username = prefs.getString("username", "");
+
+        if (!username.isEmpty()){
+            loading(true);
+            findUserInDB(username);
+        }
     }
 
 
@@ -122,9 +156,12 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()){
                         Log.d(TAG, "username already exists!");
-                        transitionToMain(task.getResult().toObject(User.class));
+                        User user = task.getResult().toObject(User.class);
+                        if (user!= null) transitionToMain(user);
+                        else Log.e(TAG, "User object was null!");
                     }
                     else {
+                        //TODO make error that username already exists!
                         Log.d(TAG, "Welcome new user!");
 
                         // Make new user

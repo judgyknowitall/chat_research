@@ -1,4 +1,4 @@
-package ivy.learn.chat;
+package ivy.learn.chat.entities;
 
 import android.os.Parcel;
 import android.os.Parcelable;

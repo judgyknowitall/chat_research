@@ -1,9 +1,7 @@
-package ivy.learn.chat;
+package ivy.learn.chat.entities;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.google.firebase.database.Exclude;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,6 +16,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import ivy.learn.chat.entities.ChatRoom;
+import ivy.learn.chat.entities.User;
 
 /**
  * Lobby where logged-in user can view active chat rooms
@@ -82,6 +86,10 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 ***************************************************************************************************/
 
     public void logoutUser(View view) {
+        // Empty preferences
+        SharedPreferences prefs = getSharedPreferences("ChatResearch", 0);
+        prefs.edit().remove("username").apply();
+
         Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
         finish();
@@ -113,6 +121,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 ***************************************************************************************************/
 
     // TODO: some loading mechanism?
+
 
 
 /* Firebase related Methods

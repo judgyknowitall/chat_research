@@ -1,4 +1,4 @@
-package ivy.learn.chat;
+package ivy.learn.chat.entities;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -11,6 +11,7 @@ import java.util.List;
  * Features: Firestore Compatible, parcelable
  */
 public class User implements Parcelable {
+    public static final String universal_chat_address = "usernames/user1/conversations/universalConvo";
 
     private String username;
     private List<String> chatroom_addresses;
@@ -20,6 +21,8 @@ public class User implements Parcelable {
 
     public User(String username){
         this.username = username;
+        chatroom_addresses = new ArrayList<>();
+        chatroom_addresses.add(universal_chat_address);
     }
 
 
