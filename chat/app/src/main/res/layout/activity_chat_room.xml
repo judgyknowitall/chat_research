@@ -90,7 +90,8 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                android:contentDescription="@string/send_message" />
+                android:contentDescription="@string/send_message"
+                android:onClick="sendMessage"/>
 
             <ProgressBar
                 android:id="@+id/room_sendLoading"

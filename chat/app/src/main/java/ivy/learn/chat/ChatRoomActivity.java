@@ -11,7 +11,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -19,7 +18,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -51,8 +52,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     // Firebase
     FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
+    EventListener<QuerySnapshot> mEventListener;
 
     // Other Values
+    private String chatroom_address;
     private ChatRoom this_chatroom;
     private User this_user;
 
@@ -65,7 +68,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         setContentView(R.layout.activity_chat_room);
         getIntentExtras();
 
-        if (this_user != null && this_chatroom != null){
+        if (this_user != null && this_chatroom != null && !chatroom_address.contains("null")){
             initViews();
             setListeners();
             initRecycler();
@@ -81,6 +84,9 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         if (getIntent() != null){
             this_user = getIntent().getParcelableExtra("this_user");
             this_chatroom = getIntent().getParcelableExtra("chatroom");
+            if (this_chatroom != null)
+                chatroom_address = "usernames/" + this_chatroom.getHost() + "/conversations/"
+                        + this_chatroom.getName() + "/messages";
         }
     }
 
@@ -118,6 +124,35 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        // Listen to changes in messages
+        mEventListener = (queryDocumentSnapshots, e) -> {
+            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
+            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
+
+                    switch (docChange.getType()) {
+
+                        case ADDED:
+
+                            Log.d(TAG, "Document added.");
+                            Message message = docChange.getDocument().toObject(Message.class);
+                            messages.add(0, message);
+                            adapter.notifyItemInserted(0);
+                            break;
+
+                        case REMOVED:
+                       /* TODO
+                       int position = messages.indexOf(message);
+                       messages.remove(position);
+                       adapter.notifyItemRemoved(position);*/
+
+                        case MODIFIED:
+                            //TODO
+                    }
+                }
+            }
+        };
     }
 
     private void initRecycler(){
@@ -130,17 +165,30 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
         getMessagesFromDB();
 
-        // Scroll Listener used for pagination
+        // TODO Scroll Listener used for pagination
+        /*
         rv_messages.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if (message_list_updated) {
+                    Log.d(TAG, "lastposition: " + layout_man.findLastCompletelyVisibleItemPosition()
+                    + ", messages size = " + messages.size());
                     if (layout_man.findLastCompletelyVisibleItemPosition() > (messages.size() - 1 )){
                         message_list_updated = false;
-                        getMessagesFromDB();
+                        Log.d(TAG, "Update Messages!!!");
+                        // getMessagesFromDB();
                     }
                 }
+            }
+        });*/
+
+        // Always scroll to bottom
+        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                super.onItemRangeInserted(positionStart, itemCount);
+                layout_man.smoothScrollToPosition(rv_messages, null, adapter.getItemCount());
             }
         });
     }
@@ -164,15 +212,16 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     }
 
     public void sendMessage(View view) {
+        String text = et_message.getText().toString().trim();
+        if (text.isEmpty()) return;
 
         messagePending(true);   // Disable sending message again
-
-        // Show in UI first
-        Message newMessage = new Message(this_user.getUsername(), et_message.getText().toString().trim());
-
-
-        // Then add to Database
+        Message newMessage = new Message(this_user.getUsername(), text);
+        et_message.setText(null);
+        sendMessageToDB(newMessage);
     }
+
+
 
     @Override
     public void onShortClick(int position) {
@@ -209,37 +258,58 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     }
 
 
-
 /* Firebase related Methods
 ***************************************************************************************************/
 
     private void getMessagesFromDB() {
-        String address = "usernames/" + this_chatroom.getHost() + "/conversations/" + this_chatroom.getName() + "/messages";
-        if (address.contains("null")){
-            Log.e(TAG, "chatroom address contained null values");
-            return;
-        }
-
         // Build Query
-        Query query = mFirestore.collection(address)
-                .orderBy("time_stamp", Query.Direction.ASCENDING)
+        Query query = mFirestore.collection(chatroom_address)
+                .orderBy("time_stamp", Query.Direction.DESCENDING)
                 .limit(PAGE_LIMIT);
         if (last_doc != null) query = query.startAfter(last_doc);
 
+        Query finalQuery = query;
         query.get().addOnCompleteListener(task -> {
                    if (task.isSuccessful() && task.getResult() != null) {
+
+                       // Extract useful data from result
                        QuerySnapshot query_doc = task.getResult();
+                       DocumentSnapshot first = null, last = null;
+                       if (!query_doc.isEmpty()) {
+                           first = query_doc.getDocuments().get(0);
+                           last = query_doc.getDocuments().get(query_doc.size()-1);
+                       }
+
+                       // Get messages and add to recycler
                        int i = 0;
                        for (QueryDocumentSnapshot doc : query_doc){
                            messages.add(doc.toObject(Message.class));
                            adapter.notifyItemInserted(messages.size()-1);
                            i++;
                        }
-                       if (!query_doc.isEmpty())
-                           last_doc = query_doc.getDocuments().get(query_doc.size()-1);    // Save last doc retrieved
+
+                       // Update pagination and add snapshot listener
+                       if (first != null && last != null) {
+
+                           // Add listener for loaded data
+                           // Also listen to new upcoming messages if query != older messages
+                           if (last_doc == null) finalQuery.startAt(first).addSnapshotListener(mEventListener);
+                           else finalQuery.startAt(first).endBefore(last).addSnapshotListener(mEventListener);
+
+                           // Update pagination data
+                           last_doc = last;             // Save last doc retrieved
+                           message_list_updated = true;
+                       }
                        Log.d(TAG, i + " messages were uploaded from database!");
                    }
                    else Log.e(TAG, "Couldn't retrieve messages.", task.getException());
                 });
+    }
+
+    private void sendMessageToDB(Message newMessage) {
+        mFirestore.collection(chatroom_address).add(newMessage).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) Log.e(TAG, "Couldn't send message!", task.getException());
+            messagePending(false);
+        });
     }
 }

@@ -87,8 +87,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
 
     public void removeMessage(int position){
         messages.remove(position);
-        //TODO?
-        notifyDataSetChanged();
+        notifyItemRemoved(position);
     }
 
 
@@ -123,11 +122,12 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
             layout.setOnLongClickListener(v -> {
                 if (listener != null) {
                     int position = getAdapterPosition();
-                    if (position != RecyclerView.NO_POSITION)
+                    if (position != RecyclerView.NO_POSITION) {
                         listener.onLongClick(position);
-                    return true;
+                        return true;
+                    }
                 }
-                else return false;
+                return false;
             });
         }
     }
