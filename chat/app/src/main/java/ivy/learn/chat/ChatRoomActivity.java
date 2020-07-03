@@ -1,18 +1,26 @@
 package ivy.learn.chat;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -85,7 +93,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         }
     }
 
-    /* Initialization Methods
+/* Initialization Methods
 ***************************************************************************************************/
 
     // Get User object passed from login Activity
@@ -128,6 +136,9 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                 send_button.setClickable(!et_message.getText().toString().trim().isEmpty());
                 if (send_button.isClickable()) send_button.setColorFilter(getColor(R.color.colorPrimary));
                 else send_button.setColorFilter(getColor(R.color.grey));
+
+                // Scroll to bottom while editing text ? TODO only when keyboard comes up?
+                if (layout_man.findFirstCompletelyVisibleItemPosition() != 0) rv_messages.smoothScrollToPosition(0);
             }
 
             @Override
@@ -140,35 +151,24 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         adapter = new RoomAdapter(messages, this_user.getUsername());
         adapter.setOnUserItemClickListener(this);
         layout_man = new LinearLayoutManager(this,LinearLayoutManager.VERTICAL,true);
+        layout_man.setStackFromEnd(true);   // Always show bottom of recycler
         rv_messages.setLayoutManager(layout_man);
         rv_messages.setAdapter(adapter);
 
         getMessagesFromDB();
 
-        // TODO Scroll Listener used for pagination
-        /*
+        // Scroll Listener used for pagination
         rv_messages.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if (message_list_updated) {
-                    Log.d(TAG, "lastposition: " + layout_man.findLastCompletelyVisibleItemPosition()
-                    + ", messages size = " + messages.size());
-                    if (layout_man.findLastCompletelyVisibleItemPosition() > (messages.size() - 1 )){
+                    if (layout_man.findLastCompletelyVisibleItemPosition() > (messages.size() - 2 )){
                         message_list_updated = false;
                         Log.d(TAG, "Update Messages!!!");
-                        // getMessagesFromDB();
+                        getMessagesFromDB();
                     }
                 }
-            }
-        });*/
-
-        // Always scroll to bottom
-        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
-            @Override
-            public void onItemRangeInserted(int positionStart, int itemCount) {
-                super.onItemRangeInserted(positionStart, itemCount);
-                layout_man.smoothScrollToPosition(rv_messages, null, adapter.getItemCount());
             }
         });
     }
@@ -209,8 +209,47 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     }
 
     @Override
-    public void onLongClick(int position) {
-        //TODO popup: delete message / forward message / copy
+    public void onLongClick(int position, View v) {
+        //TODO popup: delete message / forward message / copy / edit
+        Message m = messages.get(position);
+
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case R.id.messageOptions_copy:
+                    copyTextToClipboard(messages.get(position).getText());
+                    return true;
+
+                case R.id.messageOptions_edit:
+                    editMessage(position);
+                    return true;
+
+                case R.id.messageOptions_delete:
+                    deleteMessage(position);
+                    return true;
+
+                default:
+                    return false;
+            }
+        });
+        popup.inflate(R.menu.message_options);
+
+        // Hide certain items if not logged in
+        if (!messages.get(position).getAuthor().equals(this_user.getUsername()) ){
+            Menu menu = popup.getMenu();
+            menu.findItem(R.id.messageOptions_delete).setVisible(false);
+            menu.findItem(R.id.messageOptions_edit).setVisible(false);
+        }
+
+        popup.show();
+    }
+
+    private void copyTextToClipboard(String text){
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(TAG, text);
+        clipboard.setPrimaryClip(clip);
+
+        Toast.makeText(this, "copied to clipboard", Toast.LENGTH_SHORT).show();
     }
 
 
@@ -263,7 +302,9 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                        // Get messages and add to recycler
                        int i = 0;
                        for (QueryDocumentSnapshot doc : query_doc){
-                           messages.add(doc.toObject(Message.class));
+                           Message message = doc.toObject(Message.class);
+                           message.setId(doc.getId());
+                           messages.add(message);
                            adapter.notifyItemInserted(messages.size()-1);
                            i++;
                        }
@@ -274,8 +315,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                            // Add listener for loaded data
                            // Also listen to new upcoming messages if query != older messages
                            // Added to a list so they can be removed later
-                           if (last_doc == null) // This is the first get Request
+                           if (last_doc == null) { // This is the first get Request
                                listeners.add(finalQuery.endBefore(first).addSnapshotListener(getListener(true)));
+                               rv_messages.scrollToPosition(0); // Scroll to bottom on first get
+                           }
                            listeners.add(finalQuery.startAt(first).endAt(last).addSnapshotListener(getListener(false)));
 
                            // Update pagination data
@@ -286,14 +329,6 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                    }
                    else Log.e(TAG, "Couldn't retrieve messages.", task.getException());
                 });
-    }
-
-    // Send a single message to database
-    private void sendMessageToDB(Message newMessage) {
-        mFirestore.collection(chatroom_address).add(newMessage).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) Log.e(TAG, "Couldn't send message!", task.getException());
-            messagePending(false);
-        });
     }
 
     // Get an event listener depending on if we want to add new messages to front or to end of list
@@ -309,8 +344,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                             if (!addNewMessages) break;
                             Log.d(TAG, "Document added.");
                             Message message = docChange.getDocument().toObject(Message.class);
+                            message.setId(docChange.getDocument().getId());
                             messages.add(0, message);
                             adapter.notifyItemInserted(0);
+                            rv_messages.scrollToPosition(0);
                             break;
 
                         case REMOVED:
@@ -325,5 +362,34 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                 }
             }
         };
+    }
+
+    // Send a single message to database
+    private void sendMessageToDB(Message newMessage) {
+        mFirestore.collection(chatroom_address).add(newMessage).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) Log.e(TAG, "Couldn't send message!", task.getException());
+            messagePending(false);
+        });
+    }
+
+    // Edit a message
+    private void editMessage(int position){
+        et_message.requestFocus();
+        et_message.setText(messages.get(position).getText());
+        //TODO fixlayout and work on edit button
+
+        mFirestore.collection(chatroom_address).document(messages.get(position).getId())
+                .update("text", messages.get(position).getText());
+    }
+
+    // Delete a message
+    private void deleteMessage(int position){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Delete message?")
+                .setPositiveButton("Confirm", (dialog, which) ->
+                        mFirestore.collection(chatroom_address).document(messages.get(position).getId())
+                        .delete().addOnCompleteListener(task -> adapter.removeMessage(position)))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 }

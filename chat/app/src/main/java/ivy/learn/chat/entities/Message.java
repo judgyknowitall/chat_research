@@ -3,12 +3,15 @@ package ivy.learn.chat.entities;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.database.Exclude;
+
 /**
  * Class for a message object
  * Features: Firestore Compatible, parcelable
  */
 public class Message implements Parcelable {
 
+    String id;
     private String author;
     private String text;
     private long time_stamp;
@@ -42,8 +45,16 @@ public class Message implements Parcelable {
         this.text = text;
     }
 
+    @Exclude
+    public String getId() {
+        return id;
+    }
 
-/* Parcel related Methods
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /* Parcel related Methods
 ***************************************************************************************************/
 
     protected Message(Parcel in) {

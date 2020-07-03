@@ -123,7 +123,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
                 if (listener != null) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        listener.onLongClick(position);
+                        listener.onLongClick(position, v);
                         return true;
                     }
                 }
@@ -138,6 +138,6 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
 
     public interface OnMessageClickListener {
         void onShortClick(int position);
-        void onLongClick(int position);
+        void onLongClick(int position, View v);
     }
 }
