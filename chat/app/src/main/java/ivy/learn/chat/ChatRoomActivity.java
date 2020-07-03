@@ -1,6 +1,5 @@
 package ivy.learn.chat;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +21,7 @@ import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -52,7 +52,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     // Firebase
     FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
-    EventListener<QuerySnapshot> mEventListener;
+    List<ListenerRegistration> listeners = new ArrayList<>();
 
     // Other Values
     private String chatroom_address;
@@ -75,8 +75,17 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         } else Log.e(TAG, "A parcel was null!");
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
 
-/* Initialization Methods
+        // Detach Listeners
+        for (ListenerRegistration listener : listeners){
+            listener.remove();
+        }
+    }
+
+    /* Initialization Methods
 ***************************************************************************************************/
 
     // Get User object passed from login Activity
@@ -124,35 +133,6 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             @Override
             public void afterTextChanged(Editable s) {}
         });
-
-        // Listen to changes in messages
-        mEventListener = (queryDocumentSnapshots, e) -> {
-            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
-            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
-                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
-
-                    switch (docChange.getType()) {
-
-                        case ADDED:
-
-                            Log.d(TAG, "Document added.");
-                            Message message = docChange.getDocument().toObject(Message.class);
-                            messages.add(0, message);
-                            adapter.notifyItemInserted(0);
-                            break;
-
-                        case REMOVED:
-                       /* TODO
-                       int position = messages.indexOf(message);
-                       messages.remove(position);
-                       adapter.notifyItemRemoved(position);*/
-
-                        case MODIFIED:
-                            //TODO
-                    }
-                }
-            }
-        };
     }
 
     private void initRecycler(){
@@ -293,8 +273,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
                            // Add listener for loaded data
                            // Also listen to new upcoming messages if query != older messages
-                           if (last_doc == null) finalQuery.startAt(first).addSnapshotListener(mEventListener);
-                           else finalQuery.startAt(first).endBefore(last).addSnapshotListener(mEventListener);
+                           // Added to a list so they can be removed later
+                           if (last_doc == null) // This is the first get Request
+                               listeners.add(finalQuery.endBefore(first).addSnapshotListener(getListener(true)));
+                           listeners.add(finalQuery.startAt(first).endAt(last).addSnapshotListener(getListener(false)));
 
                            // Update pagination data
                            last_doc = last;             // Save last doc retrieved
@@ -306,10 +288,42 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                 });
     }
 
+    // Send a single message to database
     private void sendMessageToDB(Message newMessage) {
         mFirestore.collection(chatroom_address).add(newMessage).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) Log.e(TAG, "Couldn't send message!", task.getException());
             messagePending(false);
         });
+    }
+
+    // Get an event listener depending on if we want to add new messages to front or to end of list
+    private EventListener<QuerySnapshot> getListener(boolean addNewMessages) {
+        return (queryDocumentSnapshots, e) -> {
+            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
+            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
+
+                    switch (docChange.getType()) {
+
+                        case ADDED:
+                            if (!addNewMessages) break;
+                            Log.d(TAG, "Document added.");
+                            Message message = docChange.getDocument().toObject(Message.class);
+                            messages.add(0, message);
+                            adapter.notifyItemInserted(0);
+                            break;
+
+                        case REMOVED:
+                       /* TODO
+                       int position = messages.indexOf(message);
+                       messages.remove(position);
+                       adapter.notifyItemRemoved(position);*/
+
+                        case MODIFIED:
+                            //TODO
+                    }
+                }
+            }
+        };
     }
 }
