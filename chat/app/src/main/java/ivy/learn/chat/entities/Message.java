@@ -5,6 +5,8 @@ import android.os.Parcelable;
 
 import com.google.firebase.database.Exclude;
 
+import java.util.Objects;
+
 /**
  * Class for a message object
  * Features: Firestore Compatible, parcelable
@@ -25,8 +27,16 @@ public class Message implements Parcelable {
         this.time_stamp = System.currentTimeMillis();
     }
 
+    // Override so ArrayList.indexOf uses this function to  compare messages
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Message message = (Message) o;
+        return id.equals(message.id);
+    }
 
-/* Getters and Setters
+    /* Getters and Setters
 ***************************************************************************************************/
 
     public String getAuthor() {
@@ -54,7 +64,7 @@ public class Message implements Parcelable {
         this.id = id;
     }
 
-    /* Parcel related Methods
+/* Parcel related Methods
 ***************************************************************************************************/
 
     protected Message(Parcel in) {

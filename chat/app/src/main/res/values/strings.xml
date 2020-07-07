@@ -15,4 +15,5 @@
     <string name="edit">edit</string>
     <string name="delete">delete</string>
     <string name="copy">copy</string>
+    <string name="time_stamp">Time Stamp</string>
 </resources>

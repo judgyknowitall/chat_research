@@ -8,13 +8,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -201,36 +200,26 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         sendMessageToDB(newMessage);
     }
 
-
-
-    @Override
-    public void onShortClick(int position) {
-        //TODO see timestamp
-    }
-
     @Override
     public void onLongClick(int position, View v) {
-        //TODO popup: delete message / forward message / copy / edit
-        Message m = messages.get(position);
+        Message clicked_message = messages.get(position);
 
         PopupMenu popup = new PopupMenu(this, v);
         popup.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case R.id.messageOptions_copy:
-                    copyTextToClipboard(messages.get(position).getText());
+                    copyTextToClipboard(clicked_message.getText());
                     return true;
 
                 case R.id.messageOptions_edit:
-                    editMessage(position);
+                    editMessage(clicked_message.getId());
                     return true;
 
                 case R.id.messageOptions_delete:
-                    deleteMessage(position);
+                    deleteMessage(clicked_message.getId());
                     return true;
-
-                default:
-                    return false;
             }
+            return false;
         });
         popup.inflate(R.menu.message_options);
 
@@ -239,7 +228,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             Menu menu = popup.getMenu();
             menu.findItem(R.id.messageOptions_delete).setVisible(false);
             menu.findItem(R.id.messageOptions_edit).setVisible(false);
-        }
+        } else popup.setGravity(Gravity.END);
 
         popup.show();
     }
@@ -338,26 +327,34 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                 for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
 
-                    switch (docChange.getType()) {
+                    // Get Message
+                    Message message = docChange.getDocument().toObject(Message.class);
+                    message.setId(docChange.getDocument().getId());
 
-                        case ADDED:
-                            if (!addNewMessages) break;
-                            Log.d(TAG, "Document added.");
-                            Message message = docChange.getDocument().toObject(Message.class);
-                            message.setId(docChange.getDocument().getId());
-                            messages.add(0, message);
-                            adapter.notifyItemInserted(0);
-                            rv_messages.scrollToPosition(0);
+                    // Update RecyclerView Adapter base on type of change
+                    if (docChange.getType() == DocumentChange.Type.ADDED && addNewMessages){
+                        Log.d(TAG, "Document added.");
+                        messages.add(0, message);
+                        adapter.notifyItemInserted(0);
+                        rv_messages.scrollToPosition(0);
+                    }
+                    else {
+                        // Get Existing Message position
+                        int position = messages.indexOf(message);
+                        if (position < 0) {
+                            Log.e(TAG, "Message not found in list! " + message.getId());
                             break;
-
-                        case REMOVED:
-                       /* TODO
-                       int position = messages.indexOf(message);
-                       messages.remove(position);
-                       adapter.notifyItemRemoved(position);*/
-
-                        case MODIFIED:
-                            //TODO
+                        }
+                        // REMOVED ?
+                        if (docChange.getType() == DocumentChange.Type.REMOVED){
+                            Log.d(TAG, "Document removed.");
+                            adapter.removeMessage(position);
+                        }
+                        else { // MODIFIED
+                            Log.d(TAG, "Document modified.");
+                            messages.get(position).setText(message.getText());
+                            adapter.notifyItemChanged(position);
+                        }
                     }
                 }
             }
@@ -372,23 +369,25 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         });
     }
 
-    // Edit a message
-    private void editMessage(int position){
-        et_message.requestFocus();
-        et_message.setText(messages.get(position).getText());
-        //TODO fixlayout and work on edit button
-
-        mFirestore.collection(chatroom_address).document(messages.get(position).getId())
-                .update("text", messages.get(position).getText());
+    // Pop up a dialog to edit message
+    private void editMessage(String message_id){
+        EditTextDialog dialog = new EditTextDialog(this::editText, message_id);
+        dialog.show(getSupportFragmentManager(), "Edit Text Dialog");
     }
 
-    // Delete a message
-    private void deleteMessage(int position){
+    // Update in Firebase (listener will update UI)
+    private void editText(String new_text, String message_id){
+        mFirestore.collection(chatroom_address).document(message_id)
+                .update("text", new_text);
+    }
+
+    // Pop up dialog to confirm delete
+    private void deleteMessage(String message_id){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Delete message?")
                 .setPositiveButton("Confirm", (dialog, which) ->
-                        mFirestore.collection(chatroom_address).document(messages.get(position).getId())
-                        .delete().addOnCompleteListener(task -> adapter.removeMessage(position)))
+                        mFirestore.collection(chatroom_address).document(message_id)
+                        .delete())
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }

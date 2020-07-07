@@ -9,15 +9,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 import ivy.learn.chat.entities.Message;
 
-/**
- * TODO: link
- */
+
 public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHolder> {
     private static final String TAG = "RoomAdapter";
 
@@ -55,6 +52,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
         Message this_message = messages.get(position);
         holder.tv_author.setText(this_message.getAuthor());
         holder.tv_message.setText(this_message.getText());
+        holder.tv_timestamp.setText(Util.millisToDateTime(this_message.getTime_stamp()));
         setChatRowAppearance(this_message.getAuthor().equals(this_user_id), holder);
     }
 
@@ -83,6 +81,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
 
         holder.tv_author.setLayoutParams(params);
         holder.tv_message.setLayoutParams(params);
+        holder.tv_timestamp.setLayoutParams(params);
     }
 
     public void removeMessage(int position){
@@ -99,6 +98,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
 
         TextView tv_author;
         TextView tv_message;
+        TextView tv_timestamp;
         LinearLayout layout;
 
 
@@ -108,15 +108,13 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
             // Initialize views
             tv_author = itemView.findViewById(R.id.item_chatmessage_username);
             tv_message = itemView.findViewById(R.id.item_chatmessage_text);
+            tv_timestamp = itemView.findViewById(R.id.item_chatmessage_timestamp);
             layout = itemView.findViewById(R.id.item_chatmessage_layout);
 
             //Set Listeners
             layout.setOnClickListener(v -> {
-                if (listener != null) {
-                    int position = getAdapterPosition();
-                    if (position != RecyclerView.NO_POSITION)
-                        listener.onShortClick(position);
-                }
+                if (tv_timestamp.getVisibility() == View.GONE) tv_timestamp.setVisibility(View.VISIBLE);
+                else tv_timestamp.setVisibility(View.GONE);
             });
 
             layout.setOnLongClickListener(v -> {
@@ -137,7 +135,6 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHol
 ***************************************************************************************************/
 
     public interface OnMessageClickListener {
-        void onShortClick(int position);
         void onLongClick(int position, View v);
     }
 }
