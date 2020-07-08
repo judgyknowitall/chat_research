@@ -1,11 +1,9 @@
-package ivy.learn.chat.entities;
+package ivy.learn.chat.utility;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.google.firebase.database.Exclude;
-
-import java.util.Objects;
 
 /**
  * Class for a message object

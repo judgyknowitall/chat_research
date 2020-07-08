@@ -1,7 +1,8 @@
-package ivy.learn.chat.entities;
+package ivy.learn.chat.utility;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +13,10 @@ import java.util.List;
  */
 public class ChatRoom implements Parcelable {
 
-    private String name;    // same as id
-    private String host;    // Host user
-    private List<String> members;
+    private String name = "";       // same as id
+    private String host = "";       // Host user
+    private Long time_stamp = null; // Time-stamp of last message sent
+    private List<String> members = new ArrayList<>();
 
     // Needed for Firebase
     public ChatRoom(){}
@@ -24,6 +26,15 @@ public class ChatRoom implements Parcelable {
         this.host = host;
         members = new ArrayList<>();
         members.add(host);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChatRoom chatRoom = (ChatRoom) o;
+        return name.equals(chatRoom.name) &&
+                members.equals(chatRoom.members);
     }
 
 /* Getters and Setters
@@ -36,6 +47,10 @@ public class ChatRoom implements Parcelable {
     public List<String> getMembers() {
         if (members == null) members = new ArrayList<>();
         return new ArrayList<>(members);
+    }
+
+    public Long getTime_stamp() {
+        return time_stamp;
     }
 
     public String getHost() {
@@ -51,13 +66,17 @@ public class ChatRoom implements Parcelable {
     }
 
     public void addMember(String newMember){
-        members.add(newMember);
+        if (newMember != null) members.add(newMember);
+        else Log.w("ChatRoom", "newMember was null!");
     }
 
     public void removeMember(String member){
         members.remove(member);
     }
 
+    public void setTime_stamp(Long time_stamp) {
+        if (time_stamp != null) this.time_stamp = time_stamp;
+    }
 
 /* Parcel related Methods
 ***************************************************************************************************/

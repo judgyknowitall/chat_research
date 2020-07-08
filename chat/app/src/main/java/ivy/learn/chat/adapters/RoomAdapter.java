@@ -1,4 +1,4 @@
-package ivy.learn.chat;
+package ivy.learn.chat.adapters;
 
 import android.content.Context;
 import android.view.Gravity;
@@ -12,7 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
-import ivy.learn.chat.entities.Message;
+
+import ivy.learn.chat.R;
+import ivy.learn.chat.utility.Message;
+import ivy.learn.chat.utility.Util;
 
 
 public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHolder> {

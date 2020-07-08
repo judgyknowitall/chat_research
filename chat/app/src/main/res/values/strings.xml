@@ -16,4 +16,6 @@
     <string name="delete">delete</string>
     <string name="copy">copy</string>
     <string name="time_stamp">Time Stamp</string>
+    <string name="choose_people">Choose People</string>
+    <string name="search">Search</string>
 </resources>

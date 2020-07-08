@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
@@ -15,11 +14,10 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import ivy.learn.chat.entities.User;
+import ivy.learn.chat.utility.User;
 
 /**
  * Currently user can pick a name. [NO AUTH]

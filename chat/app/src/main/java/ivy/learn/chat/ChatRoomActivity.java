@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
@@ -36,9 +37,10 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-import ivy.learn.chat.entities.ChatRoom;
-import ivy.learn.chat.entities.Message;
-import ivy.learn.chat.entities.User;
+import ivy.learn.chat.adapters.RoomAdapter;
+import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.Message;
+import ivy.learn.chat.utility.User;
 
 public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.OnMessageClickListener {
     private static final String TAG = "ChatRoomActivity";
@@ -62,7 +64,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     List<ListenerRegistration> listeners = new ArrayList<>();
 
     // Other Values
-    private String chatroom_address;
+    private String chatroom_messages_address;
     private ChatRoom this_chatroom;
     private User this_user;
 
@@ -75,7 +77,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         setContentView(R.layout.activity_chat_room);
         getIntentExtras();
 
-        if (this_user != null && this_chatroom != null && !chatroom_address.contains("null")){
+        if (this_user != null && this_chatroom != null && !chatroom_messages_address.contains("null")){
             initViews();
             setListeners();
             initRecycler();
@@ -90,6 +92,14 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         for (ListenerRegistration listener : listeners){
             listener.remove();
         }
+
+        // Save chatroom timestamp changes
+        String chatroom_address = "usernames/" + this_chatroom.getHost() + "/conversations/" + this_chatroom.getName();
+        mFirestore.document(chatroom_address).update("time_stamp", this_chatroom.getTime_stamp())
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) Log.d(TAG, "Chatroom updated in database.");
+                    else Log.e(TAG, "Could not update chatroom in database.", task.getException());
+        });
     }
 
 /* Initialization Methods
@@ -101,7 +111,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             this_user = getIntent().getParcelableExtra("this_user");
             this_chatroom = getIntent().getParcelableExtra("chatroom");
             if (this_chatroom != null)
-                chatroom_address = "usernames/" + this_chatroom.getHost() + "/conversations/"
+                chatroom_messages_address = "usernames/" + this_chatroom.getHost() + "/conversations/"
                         + this_chatroom.getName() + "/messages";
         }
     }
@@ -112,7 +122,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         et_message = findViewById(R.id.room_writeMessage);
         send_button = findViewById(R.id.room_sendButton);
 
-        tv_room_title.setText(this_chatroom.getName());
+        if (this_chatroom.getName().equals(this_user.getUsername()))
+            tv_room_title.setText(this_chatroom.getHost());     // private messaging
+        else
+            tv_room_title.setText(this_chatroom.getName());     // group chat
     }
 
     private void setListeners(){
@@ -177,15 +190,19 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 ***************************************************************************************************/
 
     public void openOptions(View view) {
-        //TODO open hamburger menu: delete chat, add member, change pic, change name
+        //TODO open hamburger menu: delete chat, add member, change name
         Toast.makeText(this, "Options under construction", Toast.LENGTH_SHORT).show();
     }
 
     public void returnToLobby(View view) {
-        if (isTaskRoot()) {
+        if (isTaskRoot()) { // Got here from a notification
             Intent intent = new Intent(this, ChatLobbyActivity.class);
             intent.putExtra("this_user", this_user);
             startActivity(intent);
+        }
+        else { // Got here from lobby
+            Intent intent = new Intent();
+            setResult(Activity.RESULT_OK, intent);
         }
         finish();
     }
@@ -271,56 +288,54 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     private void getMessagesFromDB() {
         // Build Query
-        Query query = mFirestore.collection(chatroom_address)
+        Query query = mFirestore.collection(chatroom_messages_address)
                 .orderBy("time_stamp", Query.Direction.DESCENDING)
                 .limit(PAGE_LIMIT);
         if (last_doc != null) query = query.startAfter(last_doc);
 
         Query finalQuery = query;
         query.get().addOnCompleteListener(task -> {
-                   if (task.isSuccessful() && task.getResult() != null) {
+           if (task.isSuccessful() && task.getResult() != null) {
 
-                       // Extract useful data from result
-                       QuerySnapshot query_doc = task.getResult();
-                       DocumentSnapshot first = null, last = null;
-                       if (!query_doc.isEmpty()) {
-                           first = query_doc.getDocuments().get(0);
-                           last = query_doc.getDocuments().get(query_doc.size()-1);
-                       }
+               // Extract useful data from result
+               QuerySnapshot query_doc = task.getResult();
+               DocumentSnapshot first = null, last = null;
+               if (!query_doc.isEmpty()) {
+                   first = query_doc.getDocuments().get(0);
+                   last = query_doc.getDocuments().get(query_doc.size()-1);
+               }
 
-                       // Get messages and add to recycler
-                       int i = 0;
-                       for (QueryDocumentSnapshot doc : query_doc){
-                           Message message = doc.toObject(Message.class);
-                           message.setId(doc.getId());
-                           messages.add(message);
-                           adapter.notifyItemInserted(messages.size()-1);
-                           i++;
-                       }
+               // Get messages and add to recycler
+               for (QueryDocumentSnapshot doc : query_doc){
+                   Message message = doc.toObject(Message.class);
+                   message.setId(doc.getId());
+                   messages.add(message);
+                   adapter.notifyItemInserted(messages.size()-1);
+               }
 
-                       // Update pagination and add snapshot listener
-                       if (first != null && last != null) {
+               // Update pagination and add snapshot listener
+               if (first != null && last != null) {
 
-                           // Add listener for loaded data
-                           // Also listen to new upcoming messages if query != older messages
-                           // Added to a list so they can be removed later
-                           if (last_doc == null) { // This is the first get Request
-                               listeners.add(finalQuery.endBefore(first).addSnapshotListener(getListener(true)));
-                               rv_messages.scrollToPosition(0); // Scroll to bottom on first get
-                           }
-                           listeners.add(finalQuery.startAt(first).endAt(last).addSnapshotListener(getListener(false)));
-
-                           // Update pagination data
-                           last_doc = last;             // Save last doc retrieved
-                           message_list_updated = true;
-                       }
-                       Log.d(TAG, i + " messages were uploaded from database!");
+                   // Add listener for loaded data
+                   // Also listen to new upcoming messages if query != older messages
+                   // Added to a list so they can be removed later
+                   if (last_doc == null) { // This is the first get Request
+                       listeners.add(finalQuery.endBefore(first).addSnapshotListener(getListener(true)));
+                       rv_messages.scrollToPosition(0); // Scroll to bottom on first get
                    }
-                   else Log.e(TAG, "Couldn't retrieve messages.", task.getException());
-                });
+                   listeners.add(finalQuery.startAt(first).endAt(last).addSnapshotListener(getListener(false)));
+
+                   // Update pagination data
+                   last_doc = last;             // Save last doc retrieved
+                   message_list_updated = true;
+               }
+               Log.d(TAG, query_doc.size() + " messages were uploaded from database!");
+           }
+           else Log.e(TAG, "Couldn't retrieve messages.", task.getException());
+        });
     }
 
-    // Get an event listener depending on if we want to add new messages to front or to end of list
+    // Get an event listener depending on if we want to add new messages
     private EventListener<QuerySnapshot> getListener(boolean addNewMessages) {
         return (queryDocumentSnapshots, e) -> {
             if (e != null) Log.w(TAG, "Error in attaching listener.", e);
@@ -337,6 +352,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                         messages.add(0, message);
                         adapter.notifyItemInserted(0);
                         rv_messages.scrollToPosition(0);
+                        this_chatroom.setTime_stamp(message.getTime_stamp()); // Update chatroom time_stamp
                     }
                     else {
                         // Get Existing Message position
@@ -363,7 +379,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     // Send a single message to database
     private void sendMessageToDB(Message newMessage) {
-        mFirestore.collection(chatroom_address).add(newMessage).addOnCompleteListener(task -> {
+        mFirestore.collection(chatroom_messages_address).add(newMessage).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) Log.e(TAG, "Couldn't send message!", task.getException());
             messagePending(false);
         });
@@ -377,7 +393,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     // Update in Firebase (listener will update UI)
     private void editText(String new_text, String message_id){
-        mFirestore.collection(chatroom_address).document(message_id)
+        mFirestore.collection(chatroom_messages_address).document(message_id)
                 .update("text", new_text);
     }
 
@@ -386,7 +402,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Delete message?")
                 .setPositiveButton("Confirm", (dialog, which) ->
-                        mFirestore.collection(chatroom_address).document(message_id)
+                        mFirestore.collection(chatroom_messages_address).document(message_id)
                         .delete())
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();

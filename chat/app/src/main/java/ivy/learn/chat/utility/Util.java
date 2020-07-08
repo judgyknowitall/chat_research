@@ -1,8 +1,10 @@
-package ivy.learn.chat;
+package ivy.learn.chat.utility;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -38,5 +40,22 @@ public class Util {
                 } else return WEEK_FORMAT;
             } else return MONTH_FORMAT;
         } else return YEAR_FORMAT;
+    }
+
+    // Remove an item from position [init] in ArrayList of generic type <T> and insert it in [dest]
+    public static <T> void reorderItem(List<T> list, int init, int dest){
+        if (dest < init) {
+            list.add(dest, list.get(init));
+            list.remove(init+1);
+        } else if (dest > init) {
+            list.add(dest+1, list.get(init));
+            list.remove(init);
+        }
+    }
+
+    // Replace an item in a list
+    public static <T> void replaceItem(List<T> list, T newItem, int index){
+        list.remove(index);
+        list.add(index, newItem);
     }
 }

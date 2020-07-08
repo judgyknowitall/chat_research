@@ -1,4 +1,4 @@
-package ivy.learn.chat.entities;
+package ivy.learn.chat.utility;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -42,8 +42,16 @@ public class User implements Parcelable {
         chatroom_addresses.add(addr);
     }
 
+    public void addChatroom_address(int index, String addr){
+        chatroom_addresses.add(index, addr);
+    }
+
     public void removeChatroom_address(String addr){
         chatroom_addresses.remove(addr);
+    }
+
+    public void reorderChatroom_address(int init, int dest){
+        Util.reorderItem(chatroom_addresses, init, dest);
     }
 
 /* Parcel related Methods
