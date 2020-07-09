@@ -76,6 +76,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     protected void onStop() {
         super.onStop();
         list_reg.remove();  // No need to listen if you're not there
+        adapter.cleanUp();
     }
 
     @Override
@@ -223,6 +224,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                         for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
 
                             ChatRoom chatroom = docChange.getDocument().toObject(ChatRoom.class);
+                            chatroom.setId(docChange.getDocument().getId());
 
                             // Update RecyclerView Adapter base on type of change
                             if (docChange.getType() == DocumentChange.Type.ADDED && !chatrooms.contains(chatroom)){ // ADDED?

@@ -15,6 +15,7 @@ public class User implements Parcelable {
 
     private String username;
     private List<String> chatroom_addresses;
+    //TODO last visit time_stamp per conversation?
 
     // Needed for Firebase
     public User(){}

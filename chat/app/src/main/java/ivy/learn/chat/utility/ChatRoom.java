@@ -4,6 +4,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.google.firebase.database.Exclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +15,8 @@ import java.util.List;
  */
 public class ChatRoom implements Parcelable {
 
-    private String name = "";       // same as id
+    private String id = "";
+    private String name = "";
     private String host = "";       // Host user
     private List<String> members = new ArrayList<>();
 
@@ -32,8 +35,7 @@ public class ChatRoom implements Parcelable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ChatRoom chatRoom = (ChatRoom) o;
-        return name.equals(chatRoom.name) &&
-                members.equals(chatRoom.members);
+        return id.equals(chatRoom.id);
     }
 
 /* Getters and Setters
@@ -50,6 +52,15 @@ public class ChatRoom implements Parcelable {
 
     public String getHost() {
         return host;
+    }
+
+    @Exclude
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setHost(String host) {
@@ -73,6 +84,7 @@ public class ChatRoom implements Parcelable {
 ***************************************************************************************************/
 
     protected ChatRoom(Parcel in) {
+        id = in.readString();
         name = in.readString();
         host = in.readString();
         members = in.createStringArrayList();
@@ -97,6 +109,7 @@ public class ChatRoom implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
         dest.writeString(name);
         dest.writeString(host);
         dest.writeStringList(members);

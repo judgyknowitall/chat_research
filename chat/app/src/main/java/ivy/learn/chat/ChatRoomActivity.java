@@ -103,7 +103,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             this_user = getIntent().getParcelableExtra("this_user");
             this_chatroom = getIntent().getParcelableExtra("chatroom");
             if (this_chatroom != null)
-                chatroom_messages_address = "conversations/" + this_chatroom.getName() + "/messages";
+                chatroom_messages_address = "conversations/" + this_chatroom.getId() + "/messages";
         }
     }
 
@@ -279,6 +279,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     private void getMessagesFromDB() {
         // Build Query
+        Log.d(TAG, chatroom_messages_address);
         Query query = mFirestore.collection(chatroom_messages_address)
                 .orderBy("time_stamp", Query.Direction.DESCENDING)
                 .limit(PAGE_LIMIT);

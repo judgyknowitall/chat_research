@@ -1,25 +1,44 @@
 package ivy.learn.chat.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import ivy.learn.chat.R;
 import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.Message;
+import ivy.learn.chat.utility.Util;
 
 public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHolder> {
+    private static final String TAG = "LobbyAdapter";
 
     // Attributes
     private String this_username;
     private List<ChatRoom> chatrooms;
     OnChatRoomClickListener selection_listener;
+
+    // Firebase
+    FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
+    private List<ListenerRegistration> lastMessage_listeners = new ArrayList<>();
 
 
     // Constructor
@@ -27,6 +46,11 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
         this.this_username = this_username;
         this.selection_listener = listener;
         this.chatrooms = chatrooms;
+    }
+
+    public void cleanUp(){
+        for (ListenerRegistration listener : lastMessage_listeners)
+            listener.remove();
     }
 
 
@@ -49,12 +73,8 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
             holder.tv_name.setText(this_chatroom.getHost());    // private messaging
         else
             holder.tv_name.setText(this_chatroom.getName());    // group chat
-/* TODO chatroom timestamp
-        if (this_chatroom.getTime_stamp() != null) {
-            holder.tv_timeStamp.setText(Util.millisToDateTime(this_chatroom.getTime_stamp()));
-            holder.tv_timeStamp.setVisibility(View.VISIBLE);
-        } else
-            holder.tv_timeStamp.setVisibility(View.INVISIBLE); */
+
+        setLastMessageListener(holder, position);   // Set a listener for last message
     }
 
     @Override
@@ -80,8 +100,37 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
 
     public void removeChatroom(int position){
         chatrooms.remove(position);
+        lastMessage_listeners.get(position).remove();   // Remove listener
+        lastMessage_listeners.remove(position);
         notifyDataSetChanged();
     }
+
+
+/* Firebase Related Methods
+***************************************************************************************************/
+
+    // private void
+    private void setLastMessageListener(LobbyViewHolder holder, int position){
+        String address = "conversations/" + chatrooms.get(position).getId() + "/messages";
+
+        lastMessage_listeners.add(position,
+        mFirestore.collection(address)
+                .orderBy("time_stamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
+                        Long time_stamp = (Long) docChange.getDocument().get("time_stamp");
+
+                        // Change time_stamp
+                        if (time_stamp != null) {
+                            holder.tv_timeStamp.setText(Util.millisToDateTime(time_stamp));
+                            holder.tv_timeStamp.setVisibility(View.VISIBLE);
+                        } else holder.tv_timeStamp.setVisibility(View.INVISIBLE);
+                    } else holder.tv_timeStamp.setVisibility(View.INVISIBLE);
+                }));
+    }
+
 
 /* View Holder subclass
 ***************************************************************************************************/
