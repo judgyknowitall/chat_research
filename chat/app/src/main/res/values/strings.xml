@@ -18,4 +18,7 @@
     <string name="time_stamp">Time Stamp</string>
     <string name="choose_people">Choose People</string>
     <string name="search">Search</string>
+    <string name="change_title">Change Title</string>
+    <string name="delete_conversation">Delete Conversation</string>
+    <string name="leave_chatroom">Leave Chatroom</string>
 </resources>

@@ -15,7 +15,6 @@ public class ChatRoom implements Parcelable {
 
     private String name = "";       // same as id
     private String host = "";       // Host user
-    private Long time_stamp = null; // Time-stamp of last message sent
     private List<String> members = new ArrayList<>();
 
     // Needed for Firebase
@@ -49,10 +48,6 @@ public class ChatRoom implements Parcelable {
         return new ArrayList<>(members);
     }
 
-    public Long getTime_stamp() {
-        return time_stamp;
-    }
-
     public String getHost() {
         return host;
     }
@@ -72,10 +67,6 @@ public class ChatRoom implements Parcelable {
 
     public void removeMember(String member){
         members.remove(member);
-    }
-
-    public void setTime_stamp(Long time_stamp) {
-        if (time_stamp != null) this.time_stamp = time_stamp;
     }
 
 /* Parcel related Methods

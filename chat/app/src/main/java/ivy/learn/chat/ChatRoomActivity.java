@@ -92,14 +92,6 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         for (ListenerRegistration listener : listeners){
             listener.remove();
         }
-
-        // Save chatroom timestamp changes
-        String chatroom_address = "usernames/" + this_chatroom.getHost() + "/conversations/" + this_chatroom.getName();
-        mFirestore.document(chatroom_address).update("time_stamp", this_chatroom.getTime_stamp())
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) Log.d(TAG, "Chatroom updated in database.");
-                    else Log.e(TAG, "Could not update chatroom in database.", task.getException());
-        });
     }
 
 /* Initialization Methods
@@ -111,8 +103,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             this_user = getIntent().getParcelableExtra("this_user");
             this_chatroom = getIntent().getParcelableExtra("chatroom");
             if (this_chatroom != null)
-                chatroom_messages_address = "usernames/" + this_chatroom.getHost() + "/conversations/"
-                        + this_chatroom.getName() + "/messages";
+                chatroom_messages_address = "conversations/" + this_chatroom.getName() + "/messages";
         }
     }
 
@@ -352,7 +343,6 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                         messages.add(0, message);
                         adapter.notifyItemInserted(0);
                         rv_messages.scrollToPosition(0);
-                        this_chatroom.setTime_stamp(message.getTime_stamp()); // Update chatroom time_stamp
                     }
                     else {
                         // Get Existing Message position
@@ -376,6 +366,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             }
         };
     }
+
+
+/* Message Option Methods
+***************************************************************************************************/
 
     // Send a single message to database
     private void sendMessageToDB(Message newMessage) {

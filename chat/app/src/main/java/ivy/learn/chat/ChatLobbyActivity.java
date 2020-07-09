@@ -9,11 +9,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
 import android.view.View;
+import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 
@@ -35,6 +39,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
     // Firebase
     private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
+    private ListenerRegistration list_reg;
 
     // Request Codes
     private static final int CHATROOM_REQUEST = 1;
@@ -59,6 +64,18 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
             initRecycler();
         }
         else Log.e(TAG, "User parcel was null!");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        setChatroomListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        list_reg.remove();  // No need to listen if you're not there
     }
 
     @Override
@@ -90,12 +107,11 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
             // Update Chatroom and adapter
             adapter.notifyDataSetChanged();
-            getChatroomFromDB(0,true);
         }
 
         // Update this_user and go to newly created chatroom
-        else if (requestCode == NEWROOM_REQUEST && resultCode == RESULT_OK)
-            getChatroomFromDB(0,false);     // Add new Chatroom
+        // else if (requestCode == NEWROOM_REQUEST && resultCode == RESULT_OK)
+            //getChatroomFromDB(0,false);     // Add new Chatroom
 
     }
 
@@ -121,12 +137,6 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
         rv_chat_rooms.setLayoutManager(manager);
         rv_chat_rooms.setAdapter(adapter);
-
-        // Populate chatrooms list and update adapter accordingly
-        for (int i = 0; i < this_user.getChatroom_addresses().size(); i++){
-            chatrooms.add(new ChatRoom());
-            getChatroomFromDB(i, true);
-        }
     }
 
 
@@ -161,9 +171,35 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     }
 
     @Override
-    public void onLongClick(int position) {
-        Toast.makeText(this, "Delete? " + chatrooms.get(position), Toast.LENGTH_SHORT).show();
-        // TODO delete chatroom option
+    public void onLongClick(int position, View v) {
+        ChatRoom selected_room = chatrooms.get(position);
+
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case R.id.roomOptions_changeTitle:
+                    changeRoomTitle(selected_room);
+                    return true;
+
+                case R.id.roomOptions_delete:
+                    deleteChatRoom(selected_room);
+                    return true;
+
+                case R.id.roomOptions_leave:
+                    leaveChatRoom(selected_room);
+                    return true;
+            }
+            return false;
+        });
+        popup.inflate(R.menu.chatroom_options);
+        popup.setGravity(Gravity.END);
+
+        // Hide certain items if not logged in
+        Menu menu = popup.getMenu();
+        if (!this_user.getUsername().equals(selected_room.getHost()))   // Only host can delete room
+            menu.findItem(R.id.roomOptions_delete).setVisible(false);
+
+        popup.show();
     }
 
 
@@ -177,7 +213,80 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 /* Firebase related Methods
 ***************************************************************************************************/
 
-    // Chatrooms list must already have more than [index] items!
+    private void setChatroomListener(){
+        list_reg =
+        mFirestore.collection("conversations")
+                .whereArrayContains("members",this_user.getUsername())
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (e != null) Log.w(TAG, "Error in attaching listener.", e);
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
+
+                            ChatRoom chatroom = docChange.getDocument().toObject(ChatRoom.class);
+
+                            // Update RecyclerView Adapter base on type of change
+                            if (docChange.getType() == DocumentChange.Type.ADDED && !chatrooms.contains(chatroom)){ // ADDED?
+                                Log.d(TAG, "Document added.");
+                                adapter.addChatroom(-1, chatroom);
+                            }
+                            else {
+                                // Get Existing Message position
+                                int position = chatrooms.indexOf(chatroom);
+                                if (position < 0) {
+                                    Log.e(TAG, "Message not found in list! " + chatroom.getName());
+                                    break;
+                                }
+                                // REMOVED ?
+                                if (docChange.getType() == DocumentChange.Type.REMOVED){
+                                    Log.d(TAG, "Document removed.");
+                                    adapter.removeChatroom(position);
+                                }
+                                else { // MODIFIED
+                                    Log.d(TAG, "Document modified.");
+                                    adapter.updateChatroom(position, chatroom);
+                                }
+                            }
+                        } Log.d(TAG, queryDocumentSnapshots.size() + " rooms uploaded!");
+                    }
+                });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Chatroom Option Methods (also used in ChatRoomActivity)
+***************************************************************************************************/
+
+    void changeRoomTitle(ChatRoom chatroom){
+        //TODO
+    }
+
+    void deleteChatRoom(ChatRoom chatroom){
+        //TODO
+    }
+
+    void leaveChatRoom(ChatRoom chatroom){
+        //TODO
+    }
+
+
+
+
+/* Trash
+***************************************************************************************************/
+
+    /*
+
+        // Chatrooms list must already have more than [index] items!
     private void getChatroomFromDB(int index, boolean toUpdate){
         if (index < 0 || index > this_user.getChatroom_addresses().size()-1) {
             Log.e(TAG, "Index out of bounds!");
@@ -197,46 +306,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         });
     }
 
+     */
 
-/*
-    // Get an event listener depending on if we want to add new rooms
-    private EventListener<QuerySnapshot> getListener(boolean addNewRooms) {
-        return (queryDocumentSnapshots, e) -> {
-            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
-            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
-                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
 
-                    ChatRoom chatroom = docChange.getDocument().toObject(ChatRoom.class);
-
-                    // Update RecyclerView Adapter base on type of change
-                    if (docChange.getType() == DocumentChange.Type.ADDED && addNewRooms){ // ADDED?
-                        Log.d(TAG, "Document added.");
-                        chatrooms.add(0, chatroom);
-                        adapter.notifyItemInserted(0);
-                        rv_chat_rooms.scrollToPosition(0);
-                    }
-                    else {
-                        // Get Existing Message position
-                        int position = chatrooms.indexOf(chatroom);
-                        if (position < 0) {
-                            Log.e(TAG, "Message not found in list! " + chatroom.getName());
-                            break;
-                        }
-                        // REMOVED ?
-                        if (docChange.getType() == DocumentChange.Type.REMOVED){
-                            Log.d(TAG, "Document removed.");
-                            adapter.removeChatroom(position);
-                        }
-                        else { // MODIFIED
-                            Log.d(TAG, "Document modified.");
-                            chatrooms.get(position).setName(chatroom.getName());
-                            chatrooms.get(position).setTime_stamp(chatroom.getTime_stamp());
-                            adapter.notifyItemChanged(position);
-                        }
-                    }
-                }
-            }
-        };
-    }
-    */
 }

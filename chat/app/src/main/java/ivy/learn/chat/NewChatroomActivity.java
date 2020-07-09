@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -21,7 +22,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import ivy.learn.chat.adapters.AddUserAdapter;
 import ivy.learn.chat.utility.ChatRoom;
@@ -50,6 +53,7 @@ public class NewChatroomActivity extends AppCompatActivity {
     // Other Values
     private User this_user;
     private ChatRoom chatroom;
+    private Set<Integer> selected_positions = new HashSet<>();
 
 
 /* Overridden Methods
@@ -128,22 +132,29 @@ public class NewChatroomActivity extends AppCompatActivity {
 
     // OnClick for confirm chatroom creation
     public void createNewChatroom(View view) {
+        if (selected_positions.size() == 0){
+            Toast.makeText(this, "Must select members.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Add member usernames to chatroom object
+        for (Integer i : selected_positions){
+            chatroom.addMember(users.get(i).getUsername());
+        }
+
         // Name the chatroom the recipient if it's a private message
         if (chatroom.getMembers().size() == 2)
             chatroom.setName(chatroom.getMembers().get(1));
 
         // Add chatroom to DB
-        String chatroom_addr = "usernames/" + chatroom.getHost() + "/conversations/" + chatroom.getName();
+        String chatroom_addr = "conversations/" + chatroom.getName();
         addChatroomInDB(chatroom_addr);
     }
 
     // OnClick for RecyclerView Items
     public void onSelected(int position, boolean checked){
-        String member_username = users.get(position).getUsername();
-
-        if (checked && !chatroom.getMembers().contains(member_username))
-            chatroom.addMember(member_username);
-        else chatroom.removeMember(member_username);
+        if (checked) selected_positions.add(position);
+        else selected_positions.remove(position);
     }
 
 

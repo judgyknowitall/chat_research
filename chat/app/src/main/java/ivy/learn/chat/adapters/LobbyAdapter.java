@@ -13,7 +13,6 @@ import java.util.List;
 
 import ivy.learn.chat.R;
 import ivy.learn.chat.utility.ChatRoom;
-import ivy.learn.chat.utility.Util;
 
 public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHolder> {
 
@@ -50,12 +49,12 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
             holder.tv_name.setText(this_chatroom.getHost());    // private messaging
         else
             holder.tv_name.setText(this_chatroom.getName());    // group chat
-
+/* TODO chatroom timestamp
         if (this_chatroom.getTime_stamp() != null) {
             holder.tv_timeStamp.setText(Util.millisToDateTime(this_chatroom.getTime_stamp()));
             holder.tv_timeStamp.setVisibility(View.VISIBLE);
         } else
-            holder.tv_timeStamp.setVisibility(View.INVISIBLE);
+            holder.tv_timeStamp.setVisibility(View.INVISIBLE); */
     }
 
     @Override
@@ -68,6 +67,7 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
         notifyItemChanged(position);
     }
 
+    // TODO order chatrooms based on latest message timestamp
     public void addChatroom(int position, ChatRoom chatRoom){
         if (position > 0 && position < chatrooms.size()-1)
             chatrooms.add(position, chatRoom);
@@ -114,7 +114,7 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
                 if (listener != null) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION)
-                        listener.onLongClick(position);
+                        listener.onLongClick(position, v);
                     return true;
                 }
                 else return false;
@@ -128,7 +128,7 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
 
     public interface OnChatRoomClickListener {
         void onShortClick(int position);
-        void onLongClick(int position);
+        void onLongClick(int position, View v);
     }
 }
 
