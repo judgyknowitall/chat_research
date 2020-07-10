@@ -54,8 +54,20 @@
         app:layout_constraintTop_toBottomOf="@id/room_toolbar"
         app:layout_constraintBottom_toTopOf="@id/room_bottomToolbar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:onClick="sendMessage"/>
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/room_noMessagesError"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:text="@string/error_noMessages"
+        android:textColor="@color/grey"
+        android:textSize="18sp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/room_toolbar"
+        app:layout_constraintBottom_toTopOf="@id/room_bottomToolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <Toolbar
         android:id="@+id/room_bottomToolbar"

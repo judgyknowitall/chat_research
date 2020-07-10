@@ -19,6 +19,13 @@
     <string name="choose_people">Choose People</string>
     <string name="search">Search</string>
     <string name="change_title">Change Title</string>
-    <string name="delete_conversation">Delete Conversation</string>
-    <string name="leave_chatroom">Leave Chatroom</string>
+    <string name="delete_conversation">Delete Chat</string>
+    <string name="leave_chatroom">Leave Chat</string>
+    <string name="error_noMessages">Be the first to chat!</string>
+    <string name="deleteRoom">Conversation deleted</string>
+    <string name="error_deleteRoom">Failed to delete Conversation</string>
+    <string name="leaveRoom">Left conversation</string>
+    <string name="error_leaveRoom">Failed to leave Conversation</string>
+    <string name="members">Members</string>
+
 </resources>

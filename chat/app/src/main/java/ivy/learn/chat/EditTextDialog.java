@@ -23,12 +23,15 @@ public class EditTextDialog extends AppCompatDialogFragment {
     private EditText edit_text;
     private ImageButton edit_button;
     private EditTextDialogListener listener;
-    private String message_id;
+
+    private String text_id;
+    private String initial_text;
 
 
-    public EditTextDialog(EditTextDialogListener listener, String this_message_id){
+    public EditTextDialog(EditTextDialogListener listener, String this_text_id, String initial_text){
         this.listener = listener;
-        this.message_id = this_message_id;
+        this.text_id = this_text_id;
+        this.initial_text = initial_text;
     }
 
     @NonNull
@@ -56,13 +59,15 @@ public class EditTextDialog extends AppCompatDialogFragment {
         root_view = this_activity.getLayoutInflater().inflate(R.layout.dialog_edittext, null);
         edit_text = root_view.findViewById(R.id.dialog_editMessage);
         edit_button = root_view.findViewById(R.id.dialog_editButton);
+
+        edit_text.setText(initial_text);
     }
 
     private void setListeners() {
         // Send Message if pressed [ENTER]
         edit_text.setOnEditorActionListener((textView, id, keyEvent) -> {
             if (id == R.id.room_sendButton || id == EditorInfo.IME_NULL) {
-                listener.editText(edit_text.getText().toString().trim(), message_id);
+                listener.editText(edit_text.getText().toString().trim(), text_id);
                 dismiss();
                 return true;
             }
@@ -87,7 +92,7 @@ public class EditTextDialog extends AppCompatDialogFragment {
 
         // Edit Button listener
         edit_button.setOnClickListener(v -> {
-            listener.editText(edit_text.getText().toString().trim(), message_id);
+            listener.editText(edit_text.getText().toString().trim(), text_id);
             dismiss();
         });
     }
@@ -96,6 +101,6 @@ public class EditTextDialog extends AppCompatDialogFragment {
 ***************************************************************************************************/
 
     public interface EditTextDialogListener {
-        void editText(String text, String message_id);
+        void editText(String text, String text_id);
     }
 }

@@ -1,6 +1,7 @@
 package ivy.learn.chat;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,6 +17,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -41,13 +43,9 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
     private ListenerRegistration list_reg;
 
-    // Request Codes
-    private static final int CHATROOM_REQUEST = 1;
-    private static final int NEWROOM_REQUEST = 2;
-
     // Other Values
     private User this_user;
-    private int selected_chatroom_index = 0;
+    private int selected_chatroom_index = -1;
 
 
 /* Overridden Methods
@@ -83,6 +81,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     protected void onDestroy() {
         super.onDestroy();
 
+        /*
         // Save user info
         String user_address = "usernames/"+ this_user.getUsername();
         mFirestore.document(user_address).update("chatroom_addresses", this_user.getChatroom_addresses())
@@ -90,6 +89,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                     if (task.isSuccessful()) Log.d(TAG, "User updated in database.");
                     else Log.e(TAG, "Could not update user in database.", task.getException());
                 });
+         */
     }
 
 
@@ -99,21 +99,19 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         super.onActivityResult(requestCode, resultCode, data);
 
         // Coming back from ChatRoomActivity
-        if (requestCode == CHATROOM_REQUEST && resultCode == RESULT_OK){
+        if (requestCode == Util.CHATROOM_REQUEST && resultCode == RESULT_OK){
 
             // Reorder Chatroom lists
-            this_user.reorderChatroom_address( selected_chatroom_index, 0);
             Util.reorderItem(chatrooms, selected_chatroom_index, 0);
-            selected_chatroom_index = 0;
+            selected_chatroom_index = -1;
 
             // Update Chatroom and adapter
             adapter.notifyDataSetChanged();
         }
 
-        // Update this_user and go to newly created chatroom
-        // else if (requestCode == NEWROOM_REQUEST && resultCode == RESULT_OK)
-            //getChatroomFromDB(0,false);     // Add new Chatroom
-
+        // Go to chatroom after it is ADDED by listener
+        if (requestCode == Util.NEWCHATROOM_REQUEST && resultCode == RESULT_OK)
+            selected_chatroom_index = chatrooms.size();
     }
 
 /* Initialization Methods
@@ -155,10 +153,10 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     }
 
     public void newChatRoom(View view) {
-        selected_chatroom_index = 0;
+        selected_chatroom_index = chatrooms.size();
         Intent intent = new Intent(this, NewChatroomActivity.class);
         intent.putExtra("this_user", this_user);
-        startActivity(intent);
+        startActivityForResult(intent, Util.NEWCHATROOM_REQUEST);
     }
 
     // Go to chatroom
@@ -168,9 +166,11 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         Intent intent = new Intent(this, ChatRoomActivity.class);
         intent.putExtra("chatroom", chatrooms.get(position));
         intent.putExtra("this_user", this_user);
-        startActivityForResult(intent, CHATROOM_REQUEST);
+        startActivityForResult(intent, Util.CHATROOM_REQUEST);
     }
 
+
+    // TODO: use popup window instead?
     @Override
     public void onLongClick(int position, View v) {
         ChatRoom selected_room = chatrooms.get(position);
@@ -183,7 +183,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                     return true;
 
                 case R.id.roomOptions_delete:
-                    deleteChatRoom(selected_room);
+                    deleteChatRoom(selected_room.getId());
                     return true;
 
                 case R.id.roomOptions_leave:
@@ -195,8 +195,10 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
         popup.inflate(R.menu.chatroom_options);
         popup.setGravity(Gravity.END);
 
-        // Hide certain items if not logged in
+        // Adjust view displays
         Menu menu = popup.getMenu();
+        Util.colorMenuItem(menu.findItem(R.id.roomOptions_delete), getColor(R.color.red));
+
         if (!this_user.getUsername().equals(selected_room.getHost()))   // Only host can delete room
             menu.findItem(R.id.roomOptions_delete).setVisible(false);
 
@@ -217,7 +219,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     private void setChatroomListener(){
         list_reg =
         mFirestore.collection("conversations")
-                .whereArrayContains("members",this_user.getUsername())
+                .whereArrayContains("members", this_user.getUsername())
                 .addSnapshotListener((queryDocumentSnapshots, e) -> {
                     if (e != null) Log.w(TAG, "Error in attaching listener.", e);
                     if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
@@ -228,8 +230,12 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
                             // Update RecyclerView Adapter base on type of change
                             if (docChange.getType() == DocumentChange.Type.ADDED && !chatrooms.contains(chatroom)){ // ADDED?
-                                Log.d(TAG, "Document added.");
+                                Log.d(TAG, "Document added: " + chatroom.getName());
                                 adapter.addChatroom(-1, chatroom);
+
+                                // Came back from creating new chatroom?
+                                if (selected_chatroom_index == chatrooms.size()-1)
+                                    onShortClick(selected_chatroom_index); // Go to chatroom
                             }
                             else {
                                 // Get Existing Message position
@@ -240,11 +246,11 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                                 }
                                 // REMOVED ?
                                 if (docChange.getType() == DocumentChange.Type.REMOVED){
-                                    Log.d(TAG, "Document removed.");
+                                    Log.d(TAG, "Document removed: " + chatroom.getName());
                                     adapter.removeChatroom(position);
                                 }
                                 else { // MODIFIED
-                                    Log.d(TAG, "Document modified.");
+                                    Log.d(TAG, "Document modified: " + chatroom.getName());
                                     adapter.updateChatroom(position, chatroom);
                                 }
                             }
@@ -256,29 +262,56 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
 
 
-
-
-
-
-
-
-
-
-
 /* Chatroom Option Methods (also used in ChatRoomActivity)
 ***************************************************************************************************/
 
     void changeRoomTitle(ChatRoom chatroom){
-        //TODO
+        EditTextDialog dialog = new EditTextDialog(this::editText, chatroom.getId(), chatroom.getName());
+        dialog.show(getSupportFragmentManager(), "Edit Room Title Dialog");
     }
 
-    void deleteChatRoom(ChatRoom chatroom){
-        //TODO
+    // Update in Firebase (listener will update UI)
+    private void editText(String new_title, String chatroom_id){
+        mFirestore.collection("conversations").document(chatroom_id)
+                .update("name", new_title);
     }
 
-    void leaveChatRoom(ChatRoom chatroom){
-        //TODO
+    // Delete room entirely
+    void deleteChatRoom(String chatroom_id){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Delete Conversation for ever?")
+                .setPositiveButton("Confirm", (dialog, which) ->
+                        mFirestore.collection("conversations").document(chatroom_id)
+                        .delete().addOnCompleteListener(Util.getSimpleOnCompleteListener(
+                                this,
+                                getString(R.string.deleteRoom),
+                                getString(R.string.error_deleteRoom))))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
+
+    // Only remove current user from list of members
+    void leaveChatRoom(ChatRoom chatRoom){
+        if (chatRoom.getMembers().size() < 2){ // Not enough people in a chatroom! (there will be no members...)
+            deleteChatRoom(chatRoom.getId());
+            return;
+        }
+
+        // Change host ?
+        if (chatRoom.getHost().equals(this_user.getUsername()))
+            mFirestore.collection("conversations").document(chatRoom.getId())
+                    .update("members", FieldValue.arrayRemove(this_user.getUsername()),
+                            "host", chatRoom.getMembers().get(1))  // Host is 1st member
+                    .addOnCompleteListener(Util.getSimpleOnCompleteListener(this,
+                            getString(R.string.leaveRoom),
+                            getString(R.string.error_leaveRoom)));
+        else mFirestore.collection("conversations").document(chatRoom.getId())
+                    .update("members", FieldValue.arrayRemove(this_user.getUsername()))
+                    .addOnCompleteListener(Util.getSimpleOnCompleteListener(this,
+                            getString(R.string.leaveRoom),
+                            getString(R.string.error_leaveRoom)));
+    }
+
 
 
 

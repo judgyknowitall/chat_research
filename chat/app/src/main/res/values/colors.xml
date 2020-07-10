@@ -9,4 +9,6 @@
     <color name="grey">#ababab</color>
     <color name="disabled">#5534eba1</color>
     <color name="hint">#aaFAFAFA</color>
+
+    <color name="red">#DB4D4D</color>
 </resources>

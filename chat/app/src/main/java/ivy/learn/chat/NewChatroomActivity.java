@@ -147,8 +147,7 @@ public class NewChatroomActivity extends AppCompatActivity {
             chatroom.setName(chatroom.getMembers().get(1));
 
         // Add chatroom to DB
-        String chatroom_addr = "conversations/" + chatroom.getName();
-        addChatroomInDB(chatroom_addr);
+        addChatroomInDB();
     }
 
     // OnClick for RecyclerView Items
@@ -201,20 +200,23 @@ public class NewChatroomActivity extends AppCompatActivity {
     }
 
     // Create a new chatroom in Firebase
-    private void addChatroomInDB(String chatroom_addr){
-        mFirestore.document(chatroom_addr).set(chatroom).addOnCompleteListener(task -> {
+    private void addChatroomInDB(){
+        mFirestore.collection("conversations").add(chatroom).addOnCompleteListener(task -> {
             if (task.isSuccessful()){
 
                 // Add chatroom address to all members' list of conversations
-                this_user.addChatroom_address(0, chatroom_addr);
-                addChatroomAddrToMembers(chatroom_addr);
+                //this_user.addChatroom_address(0, chatroom_addr);
+                //addChatroomAddrToMembers(chatroom_addr);
 
                 Log.d(TAG, "Added new Chatroom to database");
+                returnToLobby(button_confirm);
             }
             else Log.e(TAG, "Wasn't able to add chatroom", task.getException());
         });
     }
 
+
+    // TODO: instead, add conversation to "last-read map"
     // Add new chatroom address to all members' conversation lists
     private void addChatroomAddrToMembers(String chatroom_address){
         for (String member : chatroom.getMembers()){

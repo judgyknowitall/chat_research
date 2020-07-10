@@ -1,5 +1,18 @@
 package ivy.learn.chat.utility;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.util.Log;
+import android.view.MenuItem;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,10 +25,17 @@ import java.util.Locale;
  */
 public class Util {
 
+    public static final int CHATROOM_REQUEST = 1;
+    public static final int NEWCHATROOM_REQUEST = 2;
+
     public static final String DAY_FORMAT = "hh:mm a";              // eg. 3:00 AM
     public static final String WEEK_FORMAT = "EEE " + DAY_FORMAT;   // eg. Monday 3:00 AM
     public static final String MONTH_FORMAT = "MMMM d";             // eg. July 1
     public static final String YEAR_FORMAT = "MMMM, yyyy";          // eg. July 2020
+
+
+/* Calendar & Millis
+***************************************************************************************************/
 
     // Translate time in millis to a readable date format
     public static String millisToDateTime(long millis){
@@ -42,6 +62,10 @@ public class Util {
         } else return YEAR_FORMAT;
     }
 
+
+/* Lists
+***************************************************************************************************/
+
     // Remove an item from position [init] in ArrayList of generic type <T> and insert it in [dest]
     public static <T> void reorderItem(List<T> list, int init, int dest){
         if (dest < init) {
@@ -58,4 +82,31 @@ public class Util {
         list.remove(index);
         list.add(index, newItem);
     }
+
+/* Spannable String
+***************************************************************************************************/
+
+    // Create a spannable string for a menuItem
+    public static void colorMenuItem(MenuItem menuItem, int color_id){
+        SpannableString str = new SpannableString(menuItem.getTitle());
+        str.setSpan(new ForegroundColorSpan(color_id), 0, str.length(), 0);
+        menuItem.setTitle(str);
+    }
+
+
+/* Firebase
+***************************************************************************************************/
+
+    // Get a simple onComplete Listener
+    public static <T> OnCompleteListener<T> getSimpleOnCompleteListener(Context context, String success_msg, String failure_msg){
+        return task -> {
+            if (task.isSuccessful()) Toast.makeText(context, success_msg, Toast.LENGTH_SHORT).show();
+            else {
+                Toast.makeText(context, failure_msg, Toast.LENGTH_SHORT).show();
+                Log.e(context.toString(), failure_msg, task.getException());
+            }
+        };
+    }
+
+
 }

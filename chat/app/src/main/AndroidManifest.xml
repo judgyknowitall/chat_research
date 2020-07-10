@@ -9,8 +9,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".NewChatroomActivity"></activity>
-        <activity android:name=".ChatRoomActivity" />
         <activity
             android:name=".LoginActivity"
             android:screenOrientation="portrait">
@@ -23,6 +21,14 @@
         <activity
             android:name=".ChatLobbyActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".NewChatroomActivity"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ChatLobbyActivity"/>
+        <activity
+            android:name=".ChatRoomActivity"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ChatLobbyActivity"/>
     </application>
 
 </manifest>

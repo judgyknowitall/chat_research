@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <item android:title="test"/>
+
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/hamMenu_members" android:title="@string/members"/>
+    </group>
+
+    <item android:title="">
+        <menu>
+            <item android:id="@+id/hamMenu_leave" android:title="@string/leave_chatroom"/>
+            <item android:id="@+id/hamMenu_changeName" android:title="@string/change_title"/>
+            <item android:id="@+id/hamMenu_delete" android:title="@string/delete_conversation"/>
+        </menu>
+    </item>
+
+</menu>
