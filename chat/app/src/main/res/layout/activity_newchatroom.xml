@@ -5,12 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".NewChatroomActivity">
+    tools:context=".NewChatroomActivity"
+    android:fitsSystemWindows="true">
 
-    <Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/newChat_toolbar"
         style="@style/StandardToolbar"
-
+        android:elevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -45,7 +46,7 @@
             android:layout_gravity="end"
             android:layout_marginEnd="16dp"/>
 
-    </Toolbar>
+    </androidx.appcompat.widget.Toolbar>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/newChat_searchBar"

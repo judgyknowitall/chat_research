@@ -54,7 +54,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chat_lobby);
+        setContentView(R.layout.activity_chatlobby);
         getIntentExtras();
 
         if (this_user != null) {

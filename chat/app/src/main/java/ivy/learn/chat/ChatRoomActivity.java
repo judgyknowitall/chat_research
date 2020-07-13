@@ -3,6 +3,8 @@ package ivy.learn.chat;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -16,6 +18,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
@@ -25,6 +28,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -41,15 +45,16 @@ import ivy.learn.chat.adapters.RoomAdapter;
 import ivy.learn.chat.utility.ChatRoom;
 import ivy.learn.chat.utility.Message;
 import ivy.learn.chat.utility.User;
+import ivy.learn.chat.utility.Util;
 
 public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.OnMessageClickListener {
     private static final String TAG = "ChatRoomActivity";
 
     // Views
-    private TextView tv_room_title;
     private RecyclerView rv_messages;
     private EditText et_message;
     private ImageButton send_button;
+    private DrawerLayout drawer;
 
     // RecyclerView
     RoomAdapter adapter;
@@ -74,12 +79,13 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chat_room);
+        setContentView(R.layout.activity_chatroom);
         getIntentExtras();
 
         if (this_user != null && this_chatroom != null && !chatroom_messages_address.contains("null")){
             initViews();
             setListeners();
+            initNavDrawer();
             initRecycler();
         } else Log.e(TAG, "A parcel was null!");
     }
@@ -94,7 +100,14 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         }
     }
 
-/* Initialization Methods
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.END))
+            drawer.closeDrawer(GravityCompat.END);
+        else super.onBackPressed();
+    }
+
+    /* Initialization Methods
 ***************************************************************************************************/
 
     // Get User object passed from login Activity
@@ -108,15 +121,17 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     }
 
     private void initViews(){
-        tv_room_title = findViewById(R.id.room_title);
+        // Views
         rv_messages = findViewById(R.id.room_recyclerview);
         et_message = findViewById(R.id.room_writeMessage);
         send_button = findViewById(R.id.room_sendButton);
+        drawer = findViewById(R.id.room_drawerLayout);
 
+        // Set Room Title
+        TextView tv_room_title = findViewById(R.id.room_title);
         if (this_chatroom.getName().equals(this_user.getUsername()))
             tv_room_title.setText(this_chatroom.getHost());     // private messaging
-        else
-            tv_room_title.setText(this_chatroom.getName());     // group chat
+        else tv_room_title.setText(this_chatroom.getName());     // group chat
     }
 
     private void setListeners(){
@@ -147,6 +162,25 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
             @Override
             public void afterTextChanged(Editable s) {}
         });
+    }
+
+    // Initialize Navigation Drawer: set colours, listener, and hide some items if necessary
+    private void initNavDrawer(){
+        NavigationView nav = findViewById(R.id.room_navView);
+
+        // Navigation Drawer: hide host-only actions
+        Menu nav_Menu = nav.getMenu();
+        if (!this_user.getUsername().equals(this_chatroom.getHost())) {
+            nav_Menu.findItem(R.id.roomNavOptions_changeTitle).setVisible(false);   // only host can change room title
+            nav_Menu.findItem(R.id.roomNavOptions_delete).setVisible(false);        // only host can delete chatroom
+        }
+        // Set colours
+        nav.setItemIconTintList(null);
+        Util.colorMenuItem(nav_Menu.findItem(R.id.roomNavOptions_delete), getColor(R.color.red));
+        Util.colorMenuItem(nav_Menu.findItem(R.id.roomNavOptions_leave), getColor(R.color.red));
+
+        // Drawer item selection
+        nav.setNavigationItemSelectedListener(this::onNavigationItemSelected);
     }
 
     private void initRecycler(){
@@ -181,8 +215,10 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 ***************************************************************************************************/
 
     public void openOptions(View view) {
-        //TODO open hamburger menu: delete chat, leave chat, view/edit members, change name
-        Toast.makeText(this, "Options under construction", Toast.LENGTH_SHORT).show();
+        if (drawer.isDrawerOpen(GravityCompat.END))
+            drawer.closeDrawer(GravityCompat.END);
+        else drawer.openDrawer(GravityCompat.END);
+
     }
 
     public void returnToLobby(View view) {
@@ -247,6 +283,35 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
         clipboard.setPrimaryClip(clip);
 
         Toast.makeText(this, "copied to clipboard", Toast.LENGTH_SHORT).show();
+    }
+
+    // OnClick listener for drawer navigation items
+    private boolean onNavigationItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.roomNavOptions_members:
+                Toast.makeText(this, "view members TODO", Toast.LENGTH_SHORT).show();
+                //TODO
+
+            case R.id.roomNavOptions_addMembers:
+                Toast.makeText(this, "add members TODO", Toast.LENGTH_SHORT).show();
+                //TODO
+
+            case R.id.roomNavOptions_changeTitle:
+                Toast.makeText(this, "change title TODO", Toast.LENGTH_SHORT).show();
+                //TODO
+
+            case R.id.roomNavOptions_leave:
+                Toast.makeText(this, "leave chat TODO", Toast.LENGTH_SHORT).show();
+                //TODO
+
+            case R.id.roomNavOptions_delete:
+                Toast.makeText(this, "delete chat TODO", Toast.LENGTH_SHORT).show();
+                //TODO
+
+            default:
+                drawer.closeDrawer(GravityCompat.END);
+        }
+        return true;
     }
 
 

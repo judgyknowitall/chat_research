@@ -16,7 +16,8 @@
         android:id="@+id/item_chatmessage_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/write_message"/>
+        android:text="@string/write_message"
+        android:textIsSelectable="true"/>
 
     <TextView
         android:id="@+id/item_chatmessage_timestamp"

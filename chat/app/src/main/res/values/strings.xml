@@ -27,5 +27,8 @@
     <string name="leaveRoom">Left conversation</string>
     <string name="error_leaveRoom">Failed to leave Conversation</string>
     <string name="members">Members</string>
+    <string name="add_members">Add Members</string>
+    <string name="nav_drawer_open">Open navigation drawer</string>
+    <string name="nav_drawer_close">Close navigation drawer</string>
 
 </resources>
