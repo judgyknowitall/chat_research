@@ -62,7 +62,7 @@ public class NewChatroomActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_newchatroom);
+        setContentView(R.layout.activity_choosepeople);
         getIntentExtras();
 
         if (this_user != null) {

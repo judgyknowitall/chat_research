@@ -28,10 +28,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -51,6 +54,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     private static final String TAG = "ChatRoomActivity";
 
     // Views
+    TextView tv_room_title;
     private RecyclerView rv_messages;
     private EditText et_message;
     private ImageButton send_button;
@@ -122,13 +126,13 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     private void initViews(){
         // Views
+        tv_room_title = findViewById(R.id.room_title);
         rv_messages = findViewById(R.id.room_recyclerview);
         et_message = findViewById(R.id.room_writeMessage);
         send_button = findViewById(R.id.room_sendButton);
         drawer = findViewById(R.id.room_drawerLayout);
 
         // Set Room Title
-        TextView tv_room_title = findViewById(R.id.room_title);
         if (this_chatroom.getName().equals(this_user.getUsername()))
             tv_room_title.setText(this_chatroom.getHost());     // private messaging
         else tv_room_title.setText(this_chatroom.getName());     // group chat
@@ -168,9 +172,9 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     private void initNavDrawer(){
         NavigationView nav = findViewById(R.id.room_navView);
 
-        // Navigation Drawer: hide host-only actions
+        // Navigation Drawer:
         Menu nav_Menu = nav.getMenu();
-        if (!this_user.getUsername().equals(this_chatroom.getHost())) {
+        if (!this_user.getUsername().equals(this_chatroom.getHost())) { // hide host-only actions
             nav_Menu.findItem(R.id.roomNavOptions_changeTitle).setVisible(false);   // only host can change room title
             nav_Menu.findItem(R.id.roomNavOptions_delete).setVisible(false);        // only host can delete chatroom
         }
@@ -289,28 +293,26 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     private boolean onNavigationItemSelected(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.roomNavOptions_members:
-                Toast.makeText(this, "view members TODO", Toast.LENGTH_SHORT).show();
-                //TODO
+                viewMembers();
+                break;
 
             case R.id.roomNavOptions_addMembers:
-                Toast.makeText(this, "add members TODO", Toast.LENGTH_SHORT).show();
-                //TODO
+                addMembers();
+                break;
 
             case R.id.roomNavOptions_changeTitle:
-                Toast.makeText(this, "change title TODO", Toast.LENGTH_SHORT).show();
-                //TODO
+                changeRoomTitle();
+                break;
 
             case R.id.roomNavOptions_leave:
-                Toast.makeText(this, "leave chat TODO", Toast.LENGTH_SHORT).show();
-                //TODO
+                leaveChatRoom();
+                break;
 
             case R.id.roomNavOptions_delete:
-                Toast.makeText(this, "delete chat TODO", Toast.LENGTH_SHORT).show();
-                //TODO
-
-            default:
-                drawer.closeDrawer(GravityCompat.END);
+                deleteChatRoom();
+                break;
         }
+        drawer.closeDrawer(GravityCompat.END);
         return true;
     }
 
@@ -319,7 +321,6 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 ***************************************************************************************************/
 
 // TODO: some loading mechanism?
-
 
     private void messagePending(boolean load){
         ProgressBar send_pending = findViewById(R.id.room_sendLoading);
@@ -439,7 +440,7 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
     }
 
 
-/* Message Option Methods
+/* Message Options
 ***************************************************************************************************/
 
     // Send a single message to database
@@ -453,12 +454,12 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
 
     // Pop up a dialog to edit message
     private void editMessage(String message_id, String initial_text){
-        EditTextDialog dialog = new EditTextDialog(this::editText, message_id, initial_text);
+        EditTextDialog dialog = new EditTextDialog(this::editMessageText, message_id, initial_text);
         dialog.show(getSupportFragmentManager(), "Edit Text Dialog");
     }
 
     // Update in Firebase (listener will update UI)
-    private void editText(String new_text, String message_id){
+    private void editMessageText(String new_text, String message_id){
         mFirestore.collection(chatroom_messages_address).document(message_id)
                 .update("text", new_text);
     }
@@ -472,5 +473,89 @@ public class ChatRoomActivity extends AppCompatActivity implements RoomAdapter.O
                         .delete())
                 .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
+    }
+
+
+/* Chatroom Navigation Options
+***************************************************************************************************/
+
+    // Delete Chatroom completely and return to Lobby
+    private void deleteChatRoom() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Delete Conversation for ever?")
+                .setPositiveButton("Confirm", (dialog, which) ->
+                    mFirestore.collection("conversations").document(this_chatroom.getId())
+                            .delete().addOnCompleteListener(task -> {
+                            if (task.isSuccessful()){
+                                Toast.makeText(this, getString(R.string.deleteRoom), Toast.LENGTH_SHORT).show();
+                                returnToLobby(drawer);
+                            } else {
+                                Toast.makeText(this, getString(R.string.error_deleteRoom), Toast.LENGTH_SHORT).show();
+                                Log.e(TAG, getString(R.string.error_deleteRoom), task.getException());
+                            }
+                        }))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    // Leave Chatroom and return to Lobby
+    private void leaveChatRoom() {
+        if (this_chatroom.getMembers().size() < 2){ // Not enough people in a chatroom! (there will be no members...)
+            deleteChatRoom();
+            return;
+        }
+
+        // Change host ?
+        Task <Void> leave_task;
+        DocumentReference docRef = mFirestore.collection("conversations").document(this_chatroom.getId());
+        if (this_chatroom.getHost().equals(this_user.getUsername()))
+            leave_task = docRef.update("members", FieldValue.arrayRemove(this_user.getUsername()),
+                            "host", this_chatroom.getMembers().get(1));  // Host is 1st member
+        else leave_task = docRef.update("members", FieldValue.arrayRemove(this_user.getUsername()));
+
+        // Add On Complete Listener
+        leave_task.addOnCompleteListener(task -> {
+            if (task.isSuccessful()){
+                Toast.makeText(this, getString(R.string.leaveRoom), Toast.LENGTH_SHORT).show();
+                returnToLobby(drawer);
+            } else {
+                Toast.makeText(this, getString(R.string.error_leaveRoom), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, getString(R.string.error_leaveRoom), task.getException());
+            }
+        });
+    }
+
+    // Change Chatroom Title (hosts only)
+    private void changeRoomTitle() {
+        EditTextDialog dialog = new EditTextDialog(this::editChatroomText, this_chatroom.getId(), this_chatroom.getName());
+        dialog.show(getSupportFragmentManager(), "Edit Room Title Dialog");
+        tv_room_title.setText(this_chatroom.getName());
+    }
+
+    // Updates chatroom title in firebase and in UI
+    private void editChatroomText(String new_title, String chatroom_id) {
+        mFirestore.collection("conversations").document(chatroom_id)
+                .update("name", new_title).addOnCompleteListener(task -> {
+                    if (task.isSuccessful()){
+                        Toast.makeText(this, getString(R.string.change_chatroom_title), Toast.LENGTH_SHORT).show();
+                        tv_room_title.setText(new_title);
+                    } else {
+                        Toast.makeText(this, getString(R.string.error_change_chatroom_title), Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, getString(R.string.error_change_chatroom_title), task.getException());
+                    }
+                });
+    }
+
+    // Add members to chatroom
+    private void addMembers() {
+        Toast.makeText(this, "add members TODO", Toast.LENGTH_SHORT).show();
+        //TODO
+    }
+
+    private void viewMembers() {
+        Intent intent = new Intent(this, SeeAllMembersActivity.class);
+        intent.putExtra("this_user", this_user);
+        intent.putExtra("chatroom", this_chatroom);
+        startActivity(intent);
     }
 }

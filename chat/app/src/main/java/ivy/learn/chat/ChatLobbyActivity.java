@@ -16,7 +16,9 @@ import android.view.View;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -265,7 +267,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 /* Chatroom Option Methods (also used in ChatRoomActivity)
 ***************************************************************************************************/
 
-    void changeRoomTitle(ChatRoom chatroom){
+    private void changeRoomTitle(ChatRoom chatroom){
         EditTextDialog dialog = new EditTextDialog(this::editText, chatroom.getId(), chatroom.getName());
         dialog.show(getSupportFragmentManager(), "Edit Room Title Dialog");
     }
@@ -273,11 +275,12 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     // Update in Firebase (listener will update UI)
     private void editText(String new_title, String chatroom_id){
         mFirestore.collection("conversations").document(chatroom_id)
-                .update("name", new_title);
+                .update("name", new_title).addOnCompleteListener(Util.getSimpleOnCompleteListener
+                (this,getString(R.string.change_chatroom_title), getString(R.string.error_change_chatroom_title)));
     }
 
     // Delete room entirely
-    void deleteChatRoom(String chatroom_id){
+    private void deleteChatRoom(String chatroom_id){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Delete Conversation for ever?")
                 .setPositiveButton("Confirm", (dialog, which) ->
@@ -291,25 +294,24 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     }
 
     // Only remove current user from list of members
-    void leaveChatRoom(ChatRoom chatRoom){
+    private void leaveChatRoom(ChatRoom chatRoom){
         if (chatRoom.getMembers().size() < 2){ // Not enough people in a chatroom! (there will be no members...)
             deleteChatRoom(chatRoom.getId());
             return;
         }
 
         // Change host ?
+        Task<Void> leave_task;
+        DocumentReference docRef = mFirestore.collection("conversations").document(chatRoom.getId());
         if (chatRoom.getHost().equals(this_user.getUsername()))
-            mFirestore.collection("conversations").document(chatRoom.getId())
-                    .update("members", FieldValue.arrayRemove(this_user.getUsername()),
-                            "host", chatRoom.getMembers().get(1))  // Host is 1st member
-                    .addOnCompleteListener(Util.getSimpleOnCompleteListener(this,
-                            getString(R.string.leaveRoom),
-                            getString(R.string.error_leaveRoom)));
-        else mFirestore.collection("conversations").document(chatRoom.getId())
-                    .update("members", FieldValue.arrayRemove(this_user.getUsername()))
-                    .addOnCompleteListener(Util.getSimpleOnCompleteListener(this,
-                            getString(R.string.leaveRoom),
-                            getString(R.string.error_leaveRoom)));
+            leave_task = docRef.update("members", FieldValue.arrayRemove(this_user.getUsername()),
+                    "host", chatRoom.getMembers().get(1));  // Host is 1st member
+        else leave_task = docRef.update("members", FieldValue.arrayRemove(this_user.getUsername()));
+
+        // Add On Complete Listener
+        leave_task.addOnCompleteListener(Util.getSimpleOnCompleteListener(this,
+                getString(R.string.leaveRoom),
+                getString(R.string.error_leaveRoom)));
     }
 
 

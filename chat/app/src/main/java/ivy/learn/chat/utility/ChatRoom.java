@@ -15,9 +15,9 @@ import java.util.List;
  */
 public class ChatRoom implements Parcelable {
 
-    private String id = "";
-    private String name = "";
-    private String host = "";       // Host user
+    private String id;
+    private String name;
+    private String host;        // Host user
     private List<String> members = new ArrayList<>();
 
     // Needed for Firebase

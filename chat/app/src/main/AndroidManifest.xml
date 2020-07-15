@@ -29,6 +29,10 @@
             android:name=".ChatRoomActivity"
             android:screenOrientation="portrait"
             android:parentActivityName=".ChatLobbyActivity"/>
+        <activity
+            android:name=".SeeAllMembersActivity"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ChatRoomActivity"/>
     </application>
 
 </manifest>

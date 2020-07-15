@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import ivy.learn.chat.utility.User;
@@ -165,9 +166,18 @@ public class LoginActivity extends AppCompatActivity {
                         // Make new user
                         User newUser = new User(username);
                         mFirestore.document(address).set(newUser).addOnCompleteListener(task1 -> {
-                           if (task.isSuccessful()) transitionToMain(newUser);
+                           if (task.isSuccessful()){
+                               // Add user to UniversalChatroom
+                               mFirestore.document("conversations/universalConvo")
+                                       .update("members", FieldValue.arrayUnion(username))
+                                       .addOnCompleteListener(task2 -> {
+                                           if (task.isSuccessful()) Log.d(TAG, "Added user to universal Convo");
+                                           else Log.e(TAG, "Couldn't add user to universal Convo");
+                                           transitionToMain(newUser);
+                                       });
+                           }
                            else {
-                               Log.e(TAG, "Something went wrong!", task.getException());
+                               Log.e(TAG, "Couldn't create new user!", task.getException());
                                loading(false);
                            }
                         });
