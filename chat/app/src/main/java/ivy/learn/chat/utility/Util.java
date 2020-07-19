@@ -1,24 +1,23 @@
 package ivy.learn.chat.utility;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.SortedList;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+
+import ivy.learn.chat.adapters.LobbyAdapter;
 
 /**
  * For Formatting see: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
@@ -83,6 +82,7 @@ public class Util {
         list.add(index, newItem);
     }
 
+
 /* Spannable String
 ***************************************************************************************************/
 
@@ -107,6 +107,4 @@ public class Util {
             }
         };
     }
-
-
 }

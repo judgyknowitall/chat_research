@@ -30,9 +30,13 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".ChatLobbyActivity"/>
         <activity
+            android:name=".GroupChatActivity"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ChatLobbyActivity"/>
+        <activity
             android:name=".SeeAllMembersActivity"
             android:screenOrientation="portrait"
-            android:parentActivityName=".ChatRoomActivity"/>
+            android:parentActivityName=".GroupChatActivity"/>
     </application>
 
 </manifest>

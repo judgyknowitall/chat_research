@@ -11,10 +11,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.FirebaseFirestore;
-
 import ivy.learn.chat.adapters.MemberAdapter;
 import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.GroupChat;
 import ivy.learn.chat.utility.User;
 
 
@@ -25,7 +24,7 @@ public class SeeAllMembersActivity extends AppCompatActivity implements MemberAd
 
     // Variables passed by intent
     private User this_user;             // Current user
-    private ChatRoom this_chatroom;
+    private GroupChat this_chatroom;
 
 
 /* Overridden Methods
@@ -75,10 +74,9 @@ public class SeeAllMembersActivity extends AppCompatActivity implements MemberAd
 /* OnClick Methods
 ***************************************************************************************************/
 
-    // OnClick for user name/image: popup wih options
+    // OnLongClick for username: popup wih options
     @Override
     public void onUserClick(int position, View v) {
-        // TODO show some options
         PopupMenu popup = new PopupMenu(this, v);
         popup.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.userOptions_message) {

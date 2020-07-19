@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/roomNavOptions_members"
+        android:title="@string/members"
+        android:icon="@drawable/ic_members"/>
+
+    <item android:id="@+id/roomNavOptions_addMembers"
+        android:title="@string/add_members"
+        android:icon="@drawable/ic_add_members"/>
+
+    <item android:id="@+id/roomNavOptions_changeTitle"
+        android:title="@string/change_title"
+        android:icon="@drawable/ic_edit"/>
+
+    <item android:id="@+id/roomNavOptions_leave"
+        android:title="@string/leave_chatroom"
+        android:icon="@drawable/ic_leave"/>
+
+    <item android:id="@+id/roomNavOptions_delete"
+        android:title="@string/delete_conversation"
+        android:icon="@drawable/ic_delete"/>
+
+</menu>

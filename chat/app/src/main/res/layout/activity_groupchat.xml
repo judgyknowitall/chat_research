@@ -15,7 +15,7 @@
         android:orientation="vertical">
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/room_toolbar"
+            android:id="@id/room_toolbar"
             style="@style/StandardToolbar"
             android:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             android:elevation="4dp"
@@ -36,7 +36,7 @@
                 android:onClick="returnToLobby"/>
 
             <TextView
-                android:id="@+id/room_title"
+                android:id="@id/room_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 style="@style/StandardTextLight"
@@ -57,20 +57,20 @@
         </androidx.appcompat.widget.Toolbar>
 
         <FrameLayout
-            android:id="@+id/room_frameLayout"
+            android:id="@id/room_frameLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
     </LinearLayout>
 
 
-<!-- Navigation View Layout -->
-<com.google.android.material.navigation.NavigationView
-    android:id="@+id/room_navView"
-    android:layout_width="wrap_content"
-    android:layout_height="match_parent"
-    android:layout_gravity="end"
-    app:headerLayout="@layout/drawer_header"
-    app:menu="@menu/chatroom_nav_options"/>
+    <!-- Navigation View Layout -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/groupChat_navView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        app:headerLayout="@layout/drawer_header"
+        app:menu="@menu/groupchat_nav_options"/>
 
 </androidx.drawerlayout.widget.DrawerLayout>

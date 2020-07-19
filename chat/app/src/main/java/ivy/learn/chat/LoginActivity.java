@@ -138,7 +138,7 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("ChatResearch", 0);
         String username = prefs.getString("username", "");
 
-        if (!username.isEmpty()){
+        if (username != null && !username.isEmpty()){
             loading(true);
             findUserInDB(username);
         }

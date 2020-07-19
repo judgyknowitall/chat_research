@@ -28,6 +28,7 @@ import java.util.Set;
 
 import ivy.learn.chat.adapters.AddUserAdapter;
 import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.GroupChat;
 import ivy.learn.chat.utility.User;
 
 public class NewChatroomActivity extends AppCompatActivity {
@@ -80,9 +81,6 @@ public class NewChatroomActivity extends AppCompatActivity {
     private void getIntentExtras(){
         if (getIntent() != null)
             this_user = getIntent().getParcelableExtra("this_user");
-
-        if (this_user != null)
-            chatroom = new ChatRoom("NewChatRoom", this_user.getUsername());
     }
 
     private void initViews(){
@@ -137,17 +135,15 @@ public class NewChatroomActivity extends AppCompatActivity {
             return;
         }
 
-        // Add member usernames to chatroom object
-        for (Integer i : selected_positions){
+        // Group chat or private chat?
+        if (selected_positions.size() > 1)
+            chatroom = new GroupChat(this_user.getUsername());
+        else chatroom = new ChatRoom(this_user.getUsername());
+
+        for (Integer i : selected_positions)    // Add member usernames to chatroom object
             chatroom.addMember(users.get(i).getUsername());
-        }
 
-        // Name the chatroom the recipient if it's a private message
-        if (chatroom.getMembers().size() == 2)
-            chatroom.setName(chatroom.getMembers().get(1));
-
-        // Add chatroom to DB
-        addChatroomInDB();
+        addChatroomInDB();      // Add chatroom to DB
     }
 
     // OnClick for RecyclerView Items
