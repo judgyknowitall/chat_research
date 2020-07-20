@@ -1,7 +1,6 @@
 package ivy.learn.chat.adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,13 +11,6 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SortedList;
 
-import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import ivy.learn.chat.R;
 import ivy.learn.chat.utility.ChatRoom;
@@ -32,24 +24,14 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
     private SortedList<ChatRoom> chatrooms;
     OnChatRoomClickListener selection_listener;
 
-    // Firebase
-    FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
-    private List<ListenerRegistration> lastMessage_listeners = new ArrayList<>();
-
-
     // Constructor
     public LobbyAdapter(String this_username, OnChatRoomClickListener listener) {
         this.this_username = this_username;
         this.selection_listener = listener;
     }
 
-    public void setChatrooms(SortedList<ChatRoom> chatrooms){
+    public void setChatrooms(SortedList<ChatRoom> chatrooms) {
         this.chatrooms = chatrooms;
-    }
-
-    public void cleanUp(){
-        for (ListenerRegistration listener : lastMessage_listeners)
-            listener.remove();
     }
 
 
@@ -77,60 +59,16 @@ public class LobbyAdapter extends RecyclerView.Adapter<LobbyAdapter.LobbyViewHol
                 holder.tv_name.setText(this_chatroom.getMembers().get(1));
         }
 
-        setLastMessageListener(holder, position);   // Set a listener for last message
+        // Set time_stamp
+        if (this_chatroom.getLast_message_timestamp() != null) {
+            holder.tv_timeStamp.setText(Util.millisToDateTime(this_chatroom.getLast_message_timestamp()));
+            holder.tv_timeStamp.setVisibility(View.VISIBLE);
+        } else holder.tv_timeStamp.setVisibility(View.INVISIBLE);
     }
 
     @Override
     public int getItemCount() {
-        if (chatrooms == null) return 0;
-        else return chatrooms.size();
-    }
-
-    public void updateChatroom(int position, ChatRoom chatRoom){
-        chatrooms.updateItemAt(position, chatRoom);
-    }
-
-    public void addChatroom(ChatRoom chatRoom){
-        chatrooms.add(chatRoom);
-        Log.d("LobbyAdapter", "chatroom size: " + chatrooms.size()); //TODO remove
-    }
-
-    public void removeChatroom(ChatRoom chatRoom){
-        int position = chatrooms.indexOf(chatRoom);
-        chatrooms.remove(chatRoom);
-        lastMessage_listeners.get(position).remove();   // Remove listener
-        lastMessage_listeners.remove(position);
-    }
-
-
-
-/* Firebase Related Methods
-***************************************************************************************************/
-
-    // Sets a listener to latest message in a chatroom so time_stamp gets updated real time
-    private void setLastMessageListener(LobbyViewHolder holder, int position){
-        String address = "conversations/" + chatrooms.get(position).getId() + "/messages";
-
-        lastMessage_listeners.add(position,
-        mFirestore.collection(address)
-                .orderBy("time_stamp", Query.Direction.DESCENDING)
-                .limit(1)
-                .addSnapshotListener((queryDocumentSnapshots, e) -> {
-                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
-                        DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
-                        Long time_stamp = (Long) docChange.getDocument().get("time_stamp");
-
-                        // Change time_stamp
-                        if (time_stamp != null) {
-                            holder.tv_timeStamp.setText(Util.millisToDateTime(time_stamp));
-                            holder.tv_timeStamp.setVisibility(View.VISIBLE);
-
-                            // Reorder chatrooms
-                            chatrooms.get(position).setLast_message_timestamp(time_stamp);
-
-                        } else holder.tv_timeStamp.setVisibility(View.INVISIBLE);
-                    } else holder.tv_timeStamp.setVisibility(View.INVISIBLE);
-                }));
+        return chatrooms.size();
     }
 
 

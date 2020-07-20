@@ -20,6 +20,9 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
+
+import java.util.ArrayList;
 
 import ivy.learn.chat.adapters.LobbyAdapter;
 import ivy.learn.chat.utility.ChatRoom;
@@ -40,7 +43,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
     // Firebase
     private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
-    private ListenerRegistration list_reg;
+    private ArrayList<ListenerRegistration> list_regs = new ArrayList<>();
 
     // Other Values
     private User this_user;
@@ -72,8 +75,8 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     @Override
     protected void onStop() {
         super.onStop();
-        list_reg.remove();  // No need to listen if you're not there
-        adapter.cleanUp();
+        for (ListenerRegistration list_reg : list_regs)
+            list_reg.remove();  // No need to listen if you're not there //TODO remove?
     }
 
 
@@ -118,7 +121,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
     private void initRecycler() {
         adapter = new LobbyAdapter(this_user.getUsername(), this);
-        chatrooms = getChatroomSortedList(adapter);
+        chatrooms = getChatroomSortedList();
         adapter.setChatrooms(chatrooms);
         RecyclerView.LayoutManager manager = new LinearLayoutManager(this);
         rv_chat_rooms.setLayoutManager(manager);
@@ -148,6 +151,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     // Go to chatroom
     @Override
     public void onShortClick(int position) {
+        if (position < 0) return;
         selected_chatroom_index = position;
         Intent intent;
         if (chatrooms.get(position).getIs_groupChat())
@@ -209,7 +213,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 ***************************************************************************************************/
 
     private void setChatroomListener(){
-        list_reg =
+        list_regs.add(
         mFirestore.collection("conversations")
                 .whereArrayContains("members", this_user.getUsername())
                 .addSnapshotListener((queryDocumentSnapshots, e) -> {
@@ -217,6 +221,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                     if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                         for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
 
+                            // Get Chatroom object from results
                             ChatRoom chatroom;
                             if (docChange.getDocument().getData().get("is_groupChat") == null){
                                 Log.e(TAG, "null field... " + docChange.getDocument().getData().toString());
@@ -228,32 +233,65 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                             chatroom.setId(docChange.getDocument().getId());
 
                             // Update RecyclerView Adapter base on type of change
-                            if (docChange.getType() == DocumentChange.Type.ADDED){ // ADDED?
-                                Log.d(TAG, "Document added: " + chatroom.getId());
-                                adapter.addChatroom(chatroom);
-
-                                // Came back from creating new chatroom?
-                                if (selected_chatroom_index == chatrooms.size()-1)
-                                    onShortClick(selected_chatroom_index); // Go to chatroom
-                            }
-                            else if (docChange.getType() == DocumentChange.Type.REMOVED){ // REMOVED ?
-                                    Log.d(TAG, "Document removed: " + chatroom.getId());
-                                    adapter.removeChatroom(chatroom);
-                                }
-                            else { // MODIFIED
-                                // Get Existing Message position
-                                int position = chatrooms.indexOf(chatroom);
-                                if (position < 0) {
-                                    Log.e(TAG, "Message not found in list! " + chatroom.getId());
-                                    break;
-                                }
-                                Log.d(TAG, "Document modified: " + chatroom.getId());
-                                adapter.updateChatroom(position, chatroom);
-
-                            }
+                            if (docChange.getType() == DocumentChange.Type.ADDED) addNewChatroom(chatroom);
+                            else if (docChange.getType() == DocumentChange.Type.REMOVED) removeChatroom(chatroom);
+                            else updateChatroom(chatroom); // MODIFIED
                         } Log.d(TAG, queryDocumentSnapshots.size() + " rooms uploaded!");
                     }
-                });
+                }));
+    }
+
+    //TODO probably wrong
+    private void updateChatroom(ChatRoom chatroom) {
+        // Get Existing Message position
+        int position = chatrooms.indexOf(chatroom);
+        if (position < 0) {
+            Log.e(TAG, "Chatroom not found in list! " + chatroom.getId());
+            return;
+        }
+        Log.d(TAG, "Document modified: " + chatroom.getId());
+        chatrooms.updateItemAt(position, chatroom);
+    }
+
+    // TODO
+    private void removeChatroom(ChatRoom chatroom) {
+        Log.d(TAG, "Document removed: " + chatroom.getId());
+        chatrooms.remove(chatroom);
+    }
+
+    // TODO test
+    private void addNewChatroom(ChatRoom chatroom) {
+        Log.d(TAG, "Document added: " + chatroom.getId());
+        setLastMessageListener(chatroom);
+
+        // TODO: (cleanup) Came back from creating new chatroom?
+        //if (selected_chatroom_index == chatrooms.size()-1)
+            //onShortClick(selected_chatroom_index); // Go to chatroom
+    }
+
+    // Sets a listener to latest message in a chatroom so time_stamp gets updated real time
+    // Then, it adds the updated chatroom to the sorted list
+    private void setLastMessageListener(ChatRoom chatroom){
+        String address = "conversations/" + chatroom.getId() + "/messages";
+
+        list_regs.add(
+                mFirestore.collection(address)
+                        .orderBy("time_stamp", Query.Direction.DESCENDING)
+                        .limit(1)
+                        .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                                DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
+                                Long time_stamp = (Long) docChange.getDocument().get("time_stamp");
+
+                                // Change time_stamp
+                                if (time_stamp != null) {
+
+                                    // Add updated Chatroom to the sorted list
+                                    chatroom.setLast_message_timestamp(time_stamp);
+                                    chatrooms.add(chatroom);
+                                }
+                            }
+                        }));
     }
 
 
@@ -313,7 +351,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 /* Utility Methods
 ***************************************************************************************************/
 
-    public SortedList<ChatRoom> getChatroomSortedList(LobbyAdapter adapter){
+    public SortedList<ChatRoom> getChatroomSortedList(){
         return new SortedList<>(ChatRoom.class, new SortedList.Callback<ChatRoom>() {
             @Override
             public void onInserted(int position, int count) {
@@ -330,6 +368,11 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                 adapter.notifyItemMoved(fromPosition, toPosition);
             }
 
+            @Override
+            public void onChanged(int position, int count) {
+                adapter.notifyItemRangeChanged(position, count);
+            }
+
             // TODO: something wrong here!!!
             @Override
             public int compare(ChatRoom o1, ChatRoom o2) {
@@ -341,11 +384,6 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                 Log.d(TAG, "o1 time: " + o1.getLast_message_timestamp() + ", o2 time: " + o2.getLast_message_timestamp());
                 Log.d(TAG, "result was: " + result);
                 return result;
-            }
-
-            @Override
-            public void onChanged(int position, int count) {
-                adapter.notifyItemRangeChanged(position, count);
             }
 
             @Override
@@ -374,7 +412,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 
 
 
-    /* Trash
+/* Trash
 ***************************************************************************************************/
 
     /*
