@@ -26,6 +26,7 @@ import java.util.ArrayList;
 
 import ivy.learn.chat.adapters.LobbyAdapter;
 import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.ExtendedSortedList;
 import ivy.learn.chat.utility.GroupChat;
 import ivy.learn.chat.utility.User;
 import ivy.learn.chat.utility.Util;
@@ -39,7 +40,7 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     // RecyclerView
     private RecyclerView rv_chat_rooms;
     private LobbyAdapter adapter;
-    private SortedList<ChatRoom> chatrooms;
+    private ExtendedSortedList<ChatRoom> chatrooms;
 
     // Firebase
     private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
@@ -241,37 +242,10 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                 }));
     }
 
-    //TODO probably wrong
-    private void updateChatroom(ChatRoom chatroom) {
-        // Get Existing Message position
-        int position = chatrooms.indexOf(chatroom);
-        if (position < 0) {
-            Log.e(TAG, "Chatroom not found in list! " + chatroom.getId());
-            return;
-        }
-        Log.d(TAG, "Document modified: " + chatroom.getId());
-        chatrooms.updateItemAt(position, chatroom);
-    }
-
-    // TODO
-    private void removeChatroom(ChatRoom chatroom) {
-        Log.d(TAG, "Document removed: " + chatroom.getId());
-        chatrooms.remove(chatroom);
-    }
-
-    // TODO test
-    private void addNewChatroom(ChatRoom chatroom) {
-        Log.d(TAG, "Document added: " + chatroom.getId());
-        setLastMessageListener(chatroom);
-
-        // TODO: (cleanup) Came back from creating new chatroom?
-        //if (selected_chatroom_index == chatrooms.size()-1)
-            //onShortClick(selected_chatroom_index); // Go to chatroom
-    }
-
     // Sets a listener to latest message in a chatroom so time_stamp gets updated real time
     // Then, it adds the updated chatroom to the sorted list
-    private void setLastMessageListener(ChatRoom chatroom){
+    private void addNewChatroom(ChatRoom chatroom) {
+        Log.d(TAG, "Document added: " + chatroom.getId());
         String address = "conversations/" + chatroom.getId() + "/messages";
 
         list_regs.add(
@@ -283,15 +257,35 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                                 DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
                                 Long time_stamp = (Long) docChange.getDocument().get("time_stamp");
 
-                                // Change time_stamp
                                 if (time_stamp != null) {
+                                    chatroom.setLast_message_timestamp(time_stamp); // Set chatroom time_stamp locally
 
-                                    // Add updated Chatroom to the sorted list
-                                    chatroom.setLast_message_timestamp(time_stamp);
-                                    chatrooms.add(chatroom);
+                                    // Update chatroom if already exists
+                                    int position = chatrooms.indexOf(chatroom);
+                                    if (position < 0) position = chatrooms.findIndexById(chatroom); // Try finding by ID if can't find it
+                                    if (position >= 0) chatrooms.updateItemAt(position, chatroom);
+                                    else chatrooms.add(chatroom);
+                                    Log.d(TAG, "ADDED CHATROOM POSITION: " + position);
                                 }
                             }
                         }));
+    }
+
+    //TODO needs more testing
+    private void updateChatroom(ChatRoom chatroom) {
+        Log.d(TAG, "Document modified: " + chatroom.getId());
+
+        // Get Existing Message position
+        int position = chatrooms.indexOf(chatroom);
+        if (position < 0) position = chatrooms.findIndexById(chatroom); // Try finding by ID if can't find it
+        if (position >= 0) chatrooms.updateItemAt(position, chatroom);
+        else Log.e(TAG, "Chatroom not found in list! " + chatroom.getId());
+    }
+
+    // TODO needs testing
+    private void removeChatroom(ChatRoom chatroom) {
+        Log.d(TAG, "Document removed: " + chatroom.getId());
+        chatrooms.remove(chatroom);
     }
 
 
@@ -351,8 +345,8 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
 /* Utility Methods
 ***************************************************************************************************/
 
-    public SortedList<ChatRoom> getChatroomSortedList(){
-        return new SortedList<>(ChatRoom.class, new SortedList.Callback<ChatRoom>() {
+    public ExtendedSortedList<ChatRoom> getChatroomSortedList(){
+        return new ExtendedSortedList<>(ChatRoom.class, new SortedList.Callback<ChatRoom>() {
             @Override
             public void onInserted(int position, int count) {
                 adapter.notifyItemRangeInserted(position, count);
@@ -379,10 +373,8 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                 int result = -1;
                 if (areItemsTheSame(o1, o2)) result = 0;
                 else if (o1.getLast_message_timestamp() != null && o2.getLast_message_timestamp() != null)
-                    result = o1.getLast_message_timestamp().compareTo(o2.getLast_message_timestamp());
-                Log.d(TAG, "o1: " + o1.getId() + ", o2: " + o2.getId());
-                Log.d(TAG, "o1 time: " + o1.getLast_message_timestamp() + ", o2 time: " + o2.getLast_message_timestamp());
-                Log.d(TAG, "result was: " + result);
+                    result = o2.getLast_message_timestamp().compareTo(o1.getLast_message_timestamp());
+                Log.d(TAG, "o1: " + o1.getId() + ", o2: " + o2.getId() + ". RESULT: " + result);
                 return result;
             }
 

@@ -11,7 +11,7 @@ import com.google.firebase.database.Exclude;
  */
 public class Message implements Parcelable {
 
-    String id;
+    private String id;
     private String author;
     private String text;
     private long time_stamp;
