@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
@@ -66,6 +67,16 @@ public class GroupChatActivity extends AppCompatActivity {
         if (drawer.isDrawerOpen(GravityCompat.END))
             drawer.closeDrawer(GravityCompat.END);
         else super.onBackPressed();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK && data != null) {
+            if (data.getParcelableExtra("updated_chatroom") != null)
+                this_chatroom = data.getParcelableExtra("updated_chatroom");
+        }
     }
 
 /* Initialization Methods
@@ -253,6 +264,6 @@ public class GroupChatActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SeeAllMembersActivity.class);
         intent.putExtra("this_user", this_user);
         intent.putExtra("chatroom", this_chatroom);
-        startActivity(intent);
+        startActivityForResult(intent, Util.VIEWMEMBERS_REQUEST);
     }
 }

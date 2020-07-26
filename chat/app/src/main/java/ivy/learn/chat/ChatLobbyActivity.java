@@ -85,22 +85,24 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (resultCode == RESULT_OK) {
 
-        // Coming back from ChatRoomActivity
-        if (requestCode == Util.CHATROOM_REQUEST && resultCode == RESULT_OK){
-            selected_chatroom_index = -1;
+            // Coming back from ChatRoomActivity
+            if (requestCode == Util.CHATROOM_REQUEST) {
+                selected_chatroom_index = -1;
             /*// Reorder Chatroom lists
             Util.reorderItem(chatrooms, selected_chatroom_index, 0);
             selected_chatroom_index = -1;
 
             // Update Chatroom and adapter
             adapter.notifyDataSetChanged();*/
+            }
+
+
+            // Go to chatroom after it is ADDED by listener
+            if (requestCode == Util.NEWCHATROOM_REQUEST)
+                selected_chatroom_index = chatrooms.size();
         }
-
-
-        // Go to chatroom after it is ADDED by listener
-        if (requestCode == Util.NEWCHATROOM_REQUEST && resultCode == RESULT_OK)
-            selected_chatroom_index = chatrooms.size();
     }
 
 /* Initialization Methods
@@ -257,17 +259,15 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                                 DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
                                 Long time_stamp = (Long) docChange.getDocument().get("time_stamp");
 
-                                if (time_stamp != null) {
-                                    chatroom.setLast_message_timestamp(time_stamp); // Set chatroom time_stamp locally
-
-                                    // Update chatroom if already exists
-                                    int position = chatrooms.indexOf(chatroom);
-                                    if (position < 0) position = chatrooms.findIndexById(chatroom); // Try finding by ID if can't find it
-                                    if (position >= 0) chatrooms.updateItemAt(position, chatroom);
-                                    else chatrooms.add(chatroom);
-                                    Log.d(TAG, "ADDED CHATROOM POSITION: " + position);
-                                }
+                                // Set chatroom time_stamp locally
+                                if (time_stamp != null) chatroom.setLast_message_timestamp(time_stamp);
                             }
+                            // Update chatroom if already exists
+                            int position = chatrooms.indexOf(chatroom);
+                            if (position < 0) position = chatrooms.findIndexById(chatroom); // Try finding by ID if can't find it
+                            if (position >= 0) chatrooms.updateItemAt(position, chatroom);
+                            else chatrooms.add(chatroom);
+                            Log.d(TAG, chatroom.getId() + " ADDED CHATROOM POSITION: " + position);
                         }));
     }
 
@@ -367,13 +367,17 @@ public class ChatLobbyActivity extends AppCompatActivity implements LobbyAdapter
                 adapter.notifyItemRangeChanged(position, count);
             }
 
-            // TODO: something wrong here!!!
             @Override
             public int compare(ChatRoom o1, ChatRoom o2) {
                 int result = -1;
                 if (areItemsTheSame(o1, o2)) result = 0;
-                else if (o1.getLast_message_timestamp() != null && o2.getLast_message_timestamp() != null)
-                    result = o2.getLast_message_timestamp().compareTo(o1.getLast_message_timestamp());
+                else {
+                    Long comparator1 = o1.getCreation_millis();
+                    Long comparator2 = o2.getCreation_millis();
+                    if (o1.getLast_message_timestamp() != null) comparator1 = o1.getLast_message_timestamp();
+                    if (o2.getLast_message_timestamp() != null) comparator2 = o2.getLast_message_timestamp();
+                    result = comparator1.compareTo(comparator2);
+                }
                 Log.d(TAG, "o1: " + o1.getId() + ", o2: " + o2.getId() + ". RESULT: " + result);
                 return result;
             }

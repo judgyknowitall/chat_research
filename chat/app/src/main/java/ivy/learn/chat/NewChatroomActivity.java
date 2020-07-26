@@ -185,8 +185,10 @@ public class NewChatroomActivity extends AppCompatActivity {
                 }
 
                 // Update pagination data
-                last_doc = query_doc.getDocuments().get(query_doc.size()-1); // Save last doc retrieved
-                user_list_updated = true;
+                if (!query_doc.isEmpty()) {
+                    last_doc = query_doc.getDocuments().get(query_doc.size() - 1); // Save last doc retrieved
+                    user_list_updated = true;
+                }
 
                 Log.d(TAG, query_doc.size() + " users were uploaded from database!");
 

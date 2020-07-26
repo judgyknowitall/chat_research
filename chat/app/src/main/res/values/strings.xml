@@ -37,5 +37,9 @@
     <string name="kick_user">kick user</string>
     <string name="message">Message</string>
     <string name="view_profile">View Profile</string>
+    <string name="kickMember_title">Kick Member</string>
+    <string name="kickMember_message">"Are you sure you want to kick "</string>
+    <string name="kickMember">" was kicked from this conversation"</string>
+    <string name="error_kickMember">Failed to kick member</string>
 
 </resources>

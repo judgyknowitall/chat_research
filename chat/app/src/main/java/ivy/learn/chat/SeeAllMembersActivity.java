@@ -5,11 +5,16 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import ivy.learn.chat.adapters.MemberAdapter;
 import ivy.learn.chat.utility.ChatRoom;
@@ -25,6 +30,9 @@ public class SeeAllMembersActivity extends AppCompatActivity implements MemberAd
     // Variables passed by intent
     private User this_user;             // Current user
     private GroupChat this_chatroom;
+
+    // Firebase
+    FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
 
 
 /* Overridden Methods
@@ -91,7 +99,25 @@ public class SeeAllMembersActivity extends AppCompatActivity implements MemberAd
 
     @Override
     public void onKickClick(int position) {
-        // TODO kick member
+        String memberToKick = this_chatroom.getMembers().get(position);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.kickMember_title))
+                .setMessage(getString(R.string.kickMember_message) + memberToKick + "?")
+                .setPositiveButton("Confirm", (dialog, which) ->
+                        mFirestore.collection("conversations").document(this_chatroom.getId())
+                                .update("members", FieldValue.arrayRemove(memberToKick)).addOnCompleteListener(task -> {
+                            if (task.isSuccessful()){
+                                this_chatroom.removeMember(memberToKick);
+                                Toast.makeText(this, memberToKick + getString(R.string.kickMember), Toast.LENGTH_SHORT).show();
+                                goBackToChatroom(null);
+                            } else {
+                                Toast.makeText(this, getString(R.string.error_kickMember), Toast.LENGTH_SHORT).show();
+                                Log.e(TAG, getString(R.string.error_kickMember), task.getException());
+                            }
+                        }))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void createChatWithUser(String username) {
@@ -113,6 +139,7 @@ public class SeeAllMembersActivity extends AppCompatActivity implements MemberAd
         else intent = new Intent(this, ChatRoomActivity.class); // Go to room as default
 
         setResult(RESULT_OK, intent);
+        intent.putExtra("updated_chatroom", this_chatroom);
         finish();
     }
 }

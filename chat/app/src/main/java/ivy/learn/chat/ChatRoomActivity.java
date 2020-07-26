@@ -178,6 +178,6 @@ public class ChatRoomActivity extends AppCompatActivity {
 
     // TODO when integrated to main App
     private void viewUserProfile() {
-        Toast.makeText(this, "View user Profile WIP", Toast.LENGTH_SHORT).show();
+        Log.w(TAG, "View user Profile WIP");
     }
 }

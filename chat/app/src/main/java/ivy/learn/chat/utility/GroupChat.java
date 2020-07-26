@@ -18,6 +18,7 @@ public class GroupChat extends ChatRoom{
     public GroupChat(){ super(true); }
 
     public GroupChat(String host){
+        this.host = host;
         members = new ArrayList<>();
         members.add(host);
         is_groupChat = true;

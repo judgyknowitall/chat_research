@@ -26,6 +26,7 @@ public class Util {
 
     public static final int CHATROOM_REQUEST = 1;
     public static final int NEWCHATROOM_REQUEST = 2;
+    public static final int VIEWMEMBERS_REQUEST = 3;
 
     public static final String DAY_FORMAT = "hh:mm a";              // eg. 3:00 AM
     public static final String WEEK_FORMAT = "EEE " + DAY_FORMAT;   // eg. Monday 3:00 AM
