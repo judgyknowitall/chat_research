@@ -10,13 +10,42 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/input"/>
+        app:layout_constraintBottom_toTopOf="@id/input"
+
+        app:incomingDefaultBubbleColor="@color/grey"
+        app:incomingDefaultBubblePressedColor="@color/grey_dark"
+        app:incomingDefaultBubbleSelectedColor="@color/colorAccent"
+        app:incomingDefaultImageOverlayPressedColor="@color/hint"
+        app:incomingDefaultImageOverlaySelectedColor="@color/colorAccent"
+        app:incomingTextColor="@color/off_black"
+        app:incomingTextLinkColor="@color/colorAccent"
+        app:incomingTextSize="18sp"
+        app:outcomingDefaultBubbleColor="@color/colorPrimary"
+        app:outcomingDefaultBubblePressedColor="@color/colorPrimaryDark"
+        app:outcomingDefaultBubbleSelectedColor="@color/colorPrimaryDark"
+        app:outcomingDefaultImageOverlayPressedColor="@color/hint"
+        app:outcomingDefaultImageOverlaySelectedColor="@color/colorAccent"
+        app:outcomingTextColor="@color/off_white"
+        app:outcomingTextLinkColor="@color/colorAccent"
+        app:outcomingTextSize="18sp"
+        app:textAutoLink="all"/>
+
+    <!-- All Available Attributes here:
+    https://github.com/stfalcon-studio/ChatKit/blob/master/docs/STYLES_ATTR.md -->
+
+    <!-- Can also create custom layout with specified id's and matching classes/subclasses:
+        @id/bubble (ViewGroup)
+        @id/messageText (TextView)
+        @id/messageTime (TextView)
+        @id/messageUserAvatar (ImageView)
+    -->
 
     <com.stfalcon.chatkit.messages.MessageInput
         android:id="@+id/input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:inputHint="@string/write_message"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:showAttachmentButton="true"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

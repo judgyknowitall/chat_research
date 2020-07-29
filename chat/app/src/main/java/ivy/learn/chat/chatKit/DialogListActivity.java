@@ -2,6 +2,7 @@ package ivy.learn.chat.chatKit;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.squareup.picasso.Picasso;
@@ -11,8 +12,14 @@ import com.stfalcon.chatkit.utils.DateFormatter;
 
 import java.util.Date;
 
+import ivy.learn.chat.ChatRoomActivity;
 import ivy.learn.chat.R;
+import ivy.learn.chat.utility.Util;
 
+/**
+ * Docs:
+ * https://github.com/stfalcon-studio/ChatKit/blob/master/docs/COMPONENT_DIALOGS_LIST.MD
+ */
 public class DialogListActivity extends AppCompatActivity {
 
     private Author this_user;
@@ -41,17 +48,14 @@ public class DialogListActivity extends AppCompatActivity {
      * adapter.clear() - deletes all dialogs
      */
     private void setAdapter(){
-        //If you using another library - write here your way to load image
+
         DialogsListAdapter<DefaultDialog> dialogsListAdapter = new DialogsListAdapter<>((imageView, url, payload) -> {
-            //If you using another library - write here your way to load image
-            Picasso.get().load(url).into(imageView);
+            Picasso.get().load(url).into(imageView);    // If you using another library - write here your way to load image
         });
         DialogsList dialogsListView = findViewById(R.id.dialogsList);
         dialogsListView.setAdapter(dialogsListAdapter);
 
-        dialogsListAdapter.setOnDialogClickListener(dialog -> {
-            // TODO
-        });
+        dialogsListAdapter.setOnDialogClickListener(this::onDialogClick);
 
         dialogsListAdapter.setOnDialogLongClickListener(dialog -> {
             // TODO
@@ -79,5 +83,12 @@ public class DialogListActivity extends AppCompatActivity {
         } else {
             return DateFormatter.format(date, DateFormatter.Template.STRING_DAY_MONTH_YEAR);
         }
+    }
+
+    public void onDialogClick(DefaultDialog dialog) {
+        Intent intent = new Intent(this, MessageListActivity.class);
+        intent.putExtra("dialog", dialog);
+        intent.putExtra("this_user", this_user);
+        startActivityForResult(intent, Util.CHATROOM_REQUEST);
     }
 }

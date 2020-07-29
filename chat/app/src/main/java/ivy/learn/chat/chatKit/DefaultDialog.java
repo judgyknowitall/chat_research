@@ -1,12 +1,15 @@
 package ivy.learn.chat.chatKit;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.commons.models.IUser;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultDialog implements IDialog<Message> {
+public class DefaultDialog implements IDialog<Message>, Parcelable {
 
     private String id;
     private String dialogPhoto;
@@ -24,6 +27,8 @@ public class DefaultDialog implements IDialog<Message> {
         unreadCount = 0;
     }
 
+/* Getters & Setters
+***************************************************************************************************/
 
     @Override
     public String getId() {
@@ -82,5 +87,44 @@ public class DefaultDialog implements IDialog<Message> {
 
     public void removeUser(Author user){
         users.remove(user);
+    }
+
+
+
+/* Parcelable Methods
+***************************************************************************************************/
+
+    protected DefaultDialog(Parcel in) {
+        id = in.readString();
+        dialogPhoto = in.readString();
+        dialogName = in.readString();
+        users = in.createTypedArrayList(Author.CREATOR);
+        unreadCount = in.readInt();
+    }
+
+    public static final Creator<DefaultDialog> CREATOR = new Creator<DefaultDialog>() {
+        @Override
+        public DefaultDialog createFromParcel(Parcel in) {
+            return new DefaultDialog(in);
+        }
+
+        @Override
+        public DefaultDialog[] newArray(int size) {
+            return new DefaultDialog[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(dialogPhoto);
+        dest.writeString(dialogName);
+        dest.writeTypedList(users);
+        dest.writeInt(unreadCount);
     }
 }

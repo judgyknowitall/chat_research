@@ -1,16 +1,20 @@
 package ivy.learn.chat.chatKit;
 
+import androidx.annotation.Nullable;
+
 import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.commons.models.IUser;
+import com.stfalcon.chatkit.commons.models.MessageContentType;
 
 import java.util.Date;
 
-public class Message implements IMessage {
+public class Message implements IMessage, MessageContentType.Image {
 
     private String id;
     private String text;
     private IUser user;
     private Date createdAt;
+    private String imageUrl;
 
 
     public Message(String id, String text, IUser user){
@@ -41,6 +45,12 @@ public class Message implements IMessage {
         return createdAt;
     }
 
+    @Nullable
+    @Override
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -55,5 +65,9 @@ public class Message implements IMessage {
 
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
