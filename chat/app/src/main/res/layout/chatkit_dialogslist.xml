@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.stfalcon.chatkit.dialogs.DialogsList xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dialogsList"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    app:dialogDividerLeftPadding="0dp"
+    app:dialogMessageTextSize="17sp"
+    app:dialogTitleTextStyle="bold"
+    app:dialogUnreadBubbleBackgroundColor="@color/red"
+    app:dialogUnreadItemBackground="@color/grey"
+    app:dialogUnreadTitleTextStyle="bold" />
+
+<!-- All Available Attributes here:
+    https://github.com/stfalcon-studio/ChatKit/blob/master/docs/STYLES_ATTR.md -->
+
+<!-- Can also create custom layout with specified id's and matching classes/subclasses:
+        @id/dialogRootLayout (ViewGroup)
+        @id/dialogContainer (ViewGroup)
+        @id/dialogName (TextView)
+        @id/dialogDate (TextView)
+        @id/dialogLastMessage (TextView)
+        @id/dialogUnreadBubble (TextView)
+        @id/dialogLastMessageUserAvatar (ImageView)
+        @id/dialogAvatar (ImageView)
+        @id/dialogDividerContainer (ViewGroup)
+        @id/dialogDivider (View)
+    -->

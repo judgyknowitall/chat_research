@@ -9,6 +9,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!-- Chat App: main activities (no chat libraries used) -->
         <activity
             android:name=".LoginActivity"
             android:screenOrientation="portrait">
@@ -23,16 +25,26 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".NewChatroomActivity"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ChatLobbyActivity"/>
+            android:parentActivityName=".ChatLobbyActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ChatRoomActivity"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ChatLobbyActivity"/>
+            android:parentActivityName=".ChatLobbyActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SeeAllMembersActivity"
-            android:screenOrientation="portrait"
-            android:parentActivityName=".ChatRoomActivity"/>
+            android:parentActivityName=".ChatRoomActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- External Libraries: run these activities seperately when testing -->
+        <activity
+            android:name=".chatKit.DialogListActivity"
+            android:exported="true"/>
+
+        <activity
+            android:name=".chatKit.MessageListActivity"
+            android:parentActivityName=".chatKit.DialogListActivity"/>
+
     </application>
 
 </manifest>

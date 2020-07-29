@@ -34,5 +34,6 @@
     <string name="error_change_chatroom_title">Failed to change chatroom title</string>
     <string name="kick_user">kick user</string>
     <string name="message">Message</string>
+    <string name="date_header_yesterday">Yesterday</string>
 
 </resources>
