@@ -4,16 +4,23 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.squareup.picasso.Picasso;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
 import com.stfalcon.chatkit.utils.DateFormatter;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import ivy.learn.chat.ChatRoomActivity;
 import ivy.learn.chat.R;
+import ivy.learn.chat.utility.ChatRoom;
 import ivy.learn.chat.utility.Util;
 
 /**
@@ -24,6 +31,15 @@ public class DialogListActivity extends AppCompatActivity {
 
     private Author this_user;
 
+    // Firebase
+    private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
+    private List<ListenerRegistration> listeners = new ArrayList<>();
+
+
+/* Overridden Methods
+***************************************************************************************************/
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +49,22 @@ public class DialogListActivity extends AppCompatActivity {
         setAdapter();
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        setDialogListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        for (ListenerRegistration listener : listeners)
+            listener.remove();
+    }
+
+
+/* Initialization Methods
+***************************************************************************************************/
 
     /* Adapter class can be extended for custom ViewHolder & functions
      * Current functions:
@@ -62,7 +94,7 @@ public class DialogListActivity extends AppCompatActivity {
         });
 
         // Dates format
-        dialogsListAdapter.setDatesFormatter(this::format);
+        dialogsListAdapter.setDatesFormatter(Util::format);
 
         // For TESTING
         DefaultDialog d1 = new DefaultDialog("diag_1", null, "Dialog 1");
@@ -75,20 +107,62 @@ public class DialogListActivity extends AppCompatActivity {
 
     }
 
-    public String format(Date date) {
-        if (DateFormatter.isToday(date)) {
-            return DateFormatter.format(date, DateFormatter.Template.TIME);
-        } else if (DateFormatter.isYesterday(date)) {
-            return getString(R.string.date_header_yesterday);
-        } else {
-            return DateFormatter.format(date, DateFormatter.Template.STRING_DAY_MONTH_YEAR);
-        }
-    }
+/* OnClick Methods
+***************************************************************************************************/
+
+
+
 
     public void onDialogClick(DefaultDialog dialog) {
         Intent intent = new Intent(this, MessageListActivity.class);
         intent.putExtra("dialog", dialog);
         intent.putExtra("this_user", this_user);
         startActivityForResult(intent, Util.CHATROOM_REQUEST);
+    }
+
+/* Firebase related Methods
+***************************************************************************************************/
+
+    private void setDialogListener(){
+        list_reg =
+                mFirestore.collection("conversations")
+                        .whereArrayContains("members", this_user.getUsername())
+                        .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
+                            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
+
+                                    ChatRoom chatroom = docChange.getDocument().toObject(ChatRoom.class);
+                                    chatroom.setId(docChange.getDocument().getId());
+
+                                    // Update RecyclerView Adapter base on type of change
+                                    if (docChange.getType() == DocumentChange.Type.ADDED && !chatrooms.contains(chatroom)){ // ADDED?
+                                        Log.d(TAG, "Document added: " + chatroom.getName());
+                                        adapter.addChatroom(-1, chatroom);
+
+                                        // Came back from creating new chatroom?
+                                        if (selected_chatroom_index == chatrooms.size()-1)
+                                            onShortClick(selected_chatroom_index); // Go to chatroom
+                                    }
+                                    else {
+                                        // Get Existing Message position
+                                        int position = chatrooms.indexOf(chatroom);
+                                        if (position < 0) {
+                                            Log.e(TAG, "Message not found in list! " + chatroom.getName());
+                                            break;
+                                        }
+                                        // REMOVED ?
+                                        if (docChange.getType() == DocumentChange.Type.REMOVED){
+                                            Log.d(TAG, "Document removed: " + chatroom.getName());
+                                            adapter.removeChatroom(position);
+                                        }
+                                        else { // MODIFIED
+                                            Log.d(TAG, "Document modified: " + chatroom.getName());
+                                            adapter.updateChatroom(position, chatroom);
+                                        }
+                                    }
+                                } Log.d(TAG, queryDocumentSnapshots.size() + " rooms uploaded!");
+                            }
+                        });
     }
 }

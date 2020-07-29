@@ -1,5 +1,6 @@
 package ivy.learn.chat.utility;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.text.SpannableString;
@@ -9,16 +10,21 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.stfalcon.chatkit.utils.DateFormatter;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
+import ivy.learn.chat.R;
 
 /**
  * For Formatting see: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
@@ -60,6 +66,16 @@ public class Util {
                 } else return WEEK_FORMAT;
             } else return MONTH_FORMAT;
         } else return YEAR_FORMAT;
+    }
+
+    public static String format(Date date) {
+        if (DateFormatter.isToday(date)) {
+            return DateFormatter.format(date, DateFormatter.Template.TIME);
+        } else if (DateFormatter.isYesterday(date)) {
+            return "Yesterday";
+        } else {
+            return DateFormatter.format(date, DateFormatter.Template.STRING_DAY_MONTH_YEAR);
+        }
     }
 
 

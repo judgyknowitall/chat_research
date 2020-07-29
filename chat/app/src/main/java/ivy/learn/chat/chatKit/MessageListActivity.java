@@ -14,6 +14,7 @@ import com.stfalcon.chatkit.utils.DateFormatter;
 import java.util.Date;
 
 import ivy.learn.chat.R;
+import ivy.learn.chat.utility.Util;
 
 /**
  * Docs:
@@ -55,7 +56,7 @@ public class MessageListActivity  extends AppCompatActivity {
         adapter = new MessagesListAdapter<>(this_user.getId(), (imageView, url, payload) -> {
             Picasso.get().load(url).into(imageView);    // If you using another library - write here your way to load image
         });
-        adapter.setDateHeadersFormatter(this::format);
+        adapter.setDateHeadersFormatter(Util::format);
         MessagesList messagesList = findViewById(R.id.messagesList);
         messagesList.setAdapter(adapter);
 
@@ -103,15 +104,5 @@ public class MessageListActivity  extends AppCompatActivity {
             imageMessage.setImageUrl("https://www.bloomnation.com/blog/wp-content/uploads/2012/07/Rainbow-Rose.jpg");
             adapter.addToStart(imageMessage, true);
         });
-    }
-
-    public String format(Date date) {
-        if (DateFormatter.isToday(date)) {
-            return DateFormatter.format(date, DateFormatter.Template.TIME);
-        } else if (DateFormatter.isYesterday(date)) {
-            return getString(R.string.date_header_yesterday);
-        } else {
-            return DateFormatter.format(date, DateFormatter.Template.STRING_DAY_MONTH_YEAR);
-        }
     }
 }
