@@ -2,7 +2,6 @@ package ivy.learn.chat.utility;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
@@ -15,16 +14,19 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.stfalcon.chatkit.utils.DateFormatter;
+import androidx.recyclerview.widget.SortedList;
+
+import com.google.android.gms.tasks.OnCompleteListener;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import ivy.learn.chat.R;
+import ivy.learn.chat.adapters.LobbyAdapter;
 
 /**
  * For Formatting see: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
@@ -33,6 +35,7 @@ public class Util {
 
     public static final int CHATROOM_REQUEST = 1;
     public static final int NEWCHATROOM_REQUEST = 2;
+    public static final int VIEWMEMBERS_REQUEST = 3;
 
     public static final String DAY_FORMAT = "hh:mm a";              // eg. 3:00 AM
     public static final String WEEK_FORMAT = "EEE " + DAY_FORMAT;   // eg. Monday 3:00 AM
@@ -99,6 +102,7 @@ public class Util {
         list.add(index, newItem);
     }
 
+
 /* Spannable String
 ***************************************************************************************************/
 
@@ -123,6 +127,4 @@ public class Util {
             }
         };
     }
-
-
 }

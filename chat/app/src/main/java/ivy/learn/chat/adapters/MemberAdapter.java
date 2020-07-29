@@ -1,7 +1,6 @@
 package ivy.learn.chat.adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +15,7 @@ import java.util.List;
 
 import ivy.learn.chat.R;
 import ivy.learn.chat.utility.ChatRoom;
+import ivy.learn.chat.utility.GroupChat;
 import ivy.learn.chat.utility.User;
 
 
@@ -24,12 +24,11 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.UserViewHo
     // Attributes
     private List<String> usernames;
     private User this_user;
-    private ChatRoom chatRoom;
-    private Context context;
+    private GroupChat chatRoom;
     OnUserItemClickListener selection_listener;
 
 
-    public MemberAdapter(List<String> usernames, User this_user, ChatRoom chatRoom) {
+    public MemberAdapter(List<String> usernames, User this_user, GroupChat chatRoom) {
         this.usernames = usernames;
         this.this_user = this_user;
         this.chatRoom = chatRoom;
@@ -46,7 +45,7 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.UserViewHo
     @NonNull
     @Override
     public UserViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        context = parent.getContext();
+        Context context = parent.getContext();
         View view = LayoutInflater.from(context).inflate(R.layout.item_seeall_members, parent, false);
         return new UserViewHolder(view, selection_listener);
     }
@@ -67,11 +66,6 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.UserViewHo
     @Override
     public int getItemCount() {
         return usernames.size();
-    }
-
-    public void removeUser(int position){
-        usernames.remove(position);
-        notifyDataSetChanged();
     }
 
 

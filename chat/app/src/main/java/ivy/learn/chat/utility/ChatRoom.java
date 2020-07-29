@@ -10,24 +10,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class for a chatRoom object
+ * Class for a 1on1 chatRoom object
  * Features: Firestore Compatible, parcelable
  */
 public class ChatRoom implements Parcelable {
 
-    private String id;
-    private String name;
-    private String host;        // Host user
-    private List<String> members = new ArrayList<>();
+    protected String id;
+    protected Long last_message_timestamp;
+    protected long creation_millis = -1L;
+    protected boolean is_groupChat = false;
+    protected List<String> members = new ArrayList<>();
 
     // Needed for Firebase
     public ChatRoom(){}
 
-    public ChatRoom(String name, String host){
-        this.name = name;
-        this.host = host;
-        members = new ArrayList<>();
-        members.add(host);
+    // Used by children's constructor
+    public ChatRoom(boolean is_groupChat){
+        this.is_groupChat = is_groupChat;
+    }
+
+    public ChatRoom(String user1){
+        members.add(user1);
+        creation_millis = System.currentTimeMillis();    // Creation time
     }
 
     @Override
@@ -41,19 +45,6 @@ public class ChatRoom implements Parcelable {
 /* Getters and Setters
 ***************************************************************************************************/
 
-    public String getName() {
-        return name;
-    }
-
-    public List<String> getMembers() {
-        if (members == null) members = new ArrayList<>();
-        return new ArrayList<>(members);
-    }
-
-    public String getHost() {
-        return host;
-    }
-
     @Exclude
     public String getId() {
         return id;
@@ -63,12 +54,26 @@ public class ChatRoom implements Parcelable {
         this.id = id;
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    @Exclude
+    public Long getLast_message_timestamp() {
+        return last_message_timestamp;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLast_message_timestamp(Long last_message_timestamp) {
+        this.last_message_timestamp = last_message_timestamp;
+    }
+
+    public long getCreation_millis() {
+        return creation_millis;
+    }
+
+    public boolean getIs_groupChat() {
+        return is_groupChat;
+    }
+
+    public List<String> getMembers() {
+        if (members == null) members = new ArrayList<>();
+        return new ArrayList<>(members);
     }
 
     public void addMember(String newMember){
@@ -85,8 +90,9 @@ public class ChatRoom implements Parcelable {
 
     protected ChatRoom(Parcel in) {
         id = in.readString();
-        name = in.readString();
-        host = in.readString();
+        last_message_timestamp = in.readLong();
+        creation_millis = in.readLong();
+        is_groupChat = in.readByte() != 0;
         members = in.createStringArrayList();
     }
 
@@ -110,8 +116,9 @@ public class ChatRoom implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(id);
-        dest.writeString(name);
-        dest.writeString(host);
+        dest.writeLong(last_message_timestamp);
+        dest.writeLong(creation_millis);
+        dest.writeByte((byte) (is_groupChat ? 1 : 0));
         dest.writeStringList(members);
     }
 }

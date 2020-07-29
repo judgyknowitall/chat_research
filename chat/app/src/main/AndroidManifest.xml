@@ -32,6 +32,10 @@
             android:parentActivityName=".ChatLobbyActivity"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".GroupChatActivity"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ChatLobbyActivity"/>
+        <activity
             android:name=".SeeAllMembersActivity"
             android:parentActivityName=".ChatRoomActivity"
             android:screenOrientation="portrait" />
@@ -45,6 +49,8 @@
             android:name=".chatKit.MessageListActivity"
             android:parentActivityName=".chatKit.DialogListActivity"/>
 
+            android:screenOrientation="portrait"
+            android:parentActivityName=".GroupChatActivity"/>
     </application>
 
 </manifest>

@@ -19,7 +19,6 @@ import ivy.learn.chat.utility.Util;
 
 
 public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.MessageViewHolder> {
-    private static final String TAG = "RoomAdapter";
 
     // Attributes
     private String this_user_id;
