@@ -34,7 +34,7 @@ public class Message implements Parcelable {
         return id.equals(message.id);
     }
 
-    /* Getters and Setters
+/* Getters and Setters
 ***************************************************************************************************/
 
     public String getAuthor() {

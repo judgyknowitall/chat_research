@@ -11,7 +11,6 @@ import java.util.List;
  * Features: Firestore Compatible, parcelable
  */
 public class User implements Parcelable {
-    public static final String universal_chat_address = "usernames/user1/conversations/universalConvo";
 
     private String username;
     //TODO last visit time_stamp per conversation?

@@ -3,34 +3,42 @@ package ivy.learn.chat.chatKit;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.firebase.firestore.Exclude;
 import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.commons.models.IUser;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultDialog implements IDialog<Message>, Parcelable {
+/**
+ * Test class for any dialog/conversation object
+ * Features: Firestore Compatible, parcelable
+ */
+public class Dialog implements IDialog<Message>, Parcelable {
 
     private String id;
     private String dialogPhoto;
     private String dialogName;
-    private List<Author> users;
+    private List<Author> users = new ArrayList<>();
+    private List<String> userIds = new ArrayList<>();
     private Message lastMessage;
-    private int unreadCount;
+    private int unreadCount = 0;
 
 
-    public DefaultDialog(String id, String dialogPhoto, String dialogName){
+    // Needed for Firebase
+    public Dialog(){}
+
+    public Dialog(String id, String dialogPhoto, String dialogName){
         this.id = id;
         this.dialogPhoto = dialogPhoto;
         this.dialogName =  dialogName;
-        users = new ArrayList<>();
-        unreadCount = 0;
     }
 
 /* Getters & Setters
 ***************************************************************************************************/
 
     @Override
+    @Exclude
     public String getId() {
         return id;
     }
@@ -45,12 +53,21 @@ public class DefaultDialog implements IDialog<Message>, Parcelable {
         return dialogName;
     }
 
+    @Exclude
     @Override
     public List<? extends IUser> getUsers() {
+        if (users.isEmpty())
+            for (String id : userIds) users.add(new Author(id));
+
         return users;
     }
 
+    public List<String> getUserIds() {
+        return userIds;
+    }
+
     @Override
+    @Exclude
     public Message getLastMessage() {
         return lastMessage;
     }
@@ -83,10 +100,12 @@ public class DefaultDialog implements IDialog<Message>, Parcelable {
 
     public void addUser(Author user){
         users.add(user);
+        userIds.add(user.getId());
     }
 
     public void removeUser(Author user){
         users.remove(user);
+        userIds.remove(user.getId());
     }
 
 
@@ -94,23 +113,25 @@ public class DefaultDialog implements IDialog<Message>, Parcelable {
 /* Parcelable Methods
 ***************************************************************************************************/
 
-    protected DefaultDialog(Parcel in) {
+    protected Dialog(Parcel in) {
         id = in.readString();
         dialogPhoto = in.readString();
         dialogName = in.readString();
         users = in.createTypedArrayList(Author.CREATOR);
+        userIds = in.createStringArrayList();
+        lastMessage = in.readParcelable(getClass().getClassLoader());
         unreadCount = in.readInt();
     }
 
-    public static final Creator<DefaultDialog> CREATOR = new Creator<DefaultDialog>() {
+    public static final Creator<Dialog> CREATOR = new Creator<Dialog>() {
         @Override
-        public DefaultDialog createFromParcel(Parcel in) {
-            return new DefaultDialog(in);
+        public Dialog createFromParcel(Parcel in) {
+            return new Dialog(in);
         }
 
         @Override
-        public DefaultDialog[] newArray(int size) {
-            return new DefaultDialog[size];
+        public Dialog[] newArray(int size) {
+            return new Dialog[size];
         }
     };
 
@@ -125,6 +146,8 @@ public class DefaultDialog implements IDialog<Message>, Parcelable {
         dest.writeString(dialogPhoto);
         dest.writeString(dialogName);
         dest.writeTypedList(users);
+        dest.writeStringList(userIds);
+        dest.writeParcelable(lastMessage,0);
         dest.writeInt(unreadCount);
     }
 }

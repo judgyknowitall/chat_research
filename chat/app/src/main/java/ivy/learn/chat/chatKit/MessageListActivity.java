@@ -9,9 +9,6 @@ import com.squareup.picasso.Picasso;
 import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
-import com.stfalcon.chatkit.utils.DateFormatter;
-
-import java.util.Date;
 
 import ivy.learn.chat.R;
 import ivy.learn.chat.utility.Util;
@@ -25,7 +22,7 @@ public class MessageListActivity  extends AppCompatActivity {
     private static final String TAG = "MessageListActivity";
 
     private Author this_user;
-    private DefaultDialog this_dialog;
+    private Dialog this_dialog;
 
     private int counter = 0;
     private MessagesListAdapter<Message> adapter;

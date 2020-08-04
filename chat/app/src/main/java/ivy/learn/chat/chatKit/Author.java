@@ -5,42 +5,44 @@ import android.os.Parcelable;
 
 import com.stfalcon.chatkit.commons.models.IUser;
 
+/**
+ * Alternative class for a user/author object
+ * Features: Firestore Compatible, parcelable
+ */
 public class Author implements IUser, Parcelable {
 
-    private String id;
-    private String name;
+    private String username;
     private String avatar;
 
 
-    public Author(String id, String name){
-     this.id = id;
-     this.name = name;
+    // Needed for Firebase
+    public Author(){}
+
+    public Author(String username){
+     this.username = username;
     }
 
-/* Getters & Setters
+    public Author(String username, String avatar) {
+        this.username = username;
+        this.avatar = avatar;
+    }
+
+    /* Getters & Setters
 ***************************************************************************************************/
 
     @Override
     public String getId() {
-        return id;
+        return username;
     }
 
     @Override
     public String getName() {
-        return name;
+        return username;
     }
 
     @Override
     public String getAvatar() {
         return avatar;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public void setAvatar(String avatar) {
@@ -52,8 +54,7 @@ public class Author implements IUser, Parcelable {
 ***************************************************************************************************/
 
     protected Author(Parcel in) {
-        id = in.readString();
-        name = in.readString();
+        username = in.readString();
         avatar = in.readString();
     }
 
@@ -76,8 +77,7 @@ public class Author implements IUser, Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(id);
-        dest.writeString(name);
+        dest.writeString(username);
         dest.writeString(avatar);
     }
 }

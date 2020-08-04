@@ -9,18 +9,15 @@ import android.util.Log;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.squareup.picasso.Picasso;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
-import com.stfalcon.chatkit.utils.DateFormatter;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import ivy.learn.chat.ChatRoomActivity;
 import ivy.learn.chat.R;
-import ivy.learn.chat.utility.ChatRoom;
 import ivy.learn.chat.utility.Util;
 
 /**
@@ -28,12 +25,14 @@ import ivy.learn.chat.utility.Util;
  * https://github.com/stfalcon-studio/ChatKit/blob/master/docs/COMPONENT_DIALOGS_LIST.MD
  */
 public class DialogListActivity extends AppCompatActivity {
+    private static final String TAG = "DialogListActivity";
 
     private Author this_user;
+    private DialogsListAdapter<Dialog> adapter;
 
     // Firebase
     private FirebaseFirestore mFirestore = FirebaseFirestore.getInstance();
-    private List<ListenerRegistration> listeners = new ArrayList<>();
+    private List<ListenerRegistration> list_regs = new ArrayList<>();
 
 
 /* Overridden Methods
@@ -45,7 +44,7 @@ public class DialogListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chatkit_dialogslist);
 
-        this_user = new Author("author_1", "Author1");
+        this_user = new Author("user1");
         setAdapter();
     }
 
@@ -58,8 +57,8 @@ public class DialogListActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        for (ListenerRegistration listener : listeners)
-            listener.remove();
+        for (ListenerRegistration list_reg : list_regs)
+            list_reg.remove();  // No need to listen if you're not there
     }
 
 
@@ -81,39 +80,24 @@ public class DialogListActivity extends AppCompatActivity {
      */
     private void setAdapter(){
 
-        DialogsListAdapter<DefaultDialog> dialogsListAdapter = new DialogsListAdapter<>((imageView, url, payload) -> {
-            Picasso.get().load(url).into(imageView);    // If you using another library - write here your way to load image
+        adapter = new DialogsListAdapter<>((imageView, url, payload) -> {
+            // If you using another library - write here your way to load image
+            if (url != null && !url.isEmpty()) Picasso.get().load(url).into(imageView);
         });
-        DialogsList dialogsListView = findViewById(R.id.dialogsList);
-        dialogsListView.setAdapter(dialogsListAdapter);
-
-        dialogsListAdapter.setOnDialogClickListener(this::onDialogClick);
-
-        dialogsListAdapter.setOnDialogLongClickListener(dialog -> {
+        adapter.setOnDialogClickListener(this::onDialogClick);
+        adapter.setOnDialogLongClickListener(dialog -> {
             // TODO
         });
+        adapter.setDatesFormatter(Util::format);    // Dates format
 
-        // Dates format
-        dialogsListAdapter.setDatesFormatter(Util::format);
-
-        // For TESTING
-        DefaultDialog d1 = new DefaultDialog("diag_1", null, "Dialog 1");
-        d1.setLastMessage(new Message("message_1", "last message for diag_1", this_user));
-        DefaultDialog d2 = new DefaultDialog("diag_2", null, "Dialog 2");
-        d2.setLastMessage(new Message("message_2", "last message for diag_2", this_user));
-
-        dialogsListAdapter.addItem(d1);
-        dialogsListAdapter.addItem(d2);
-
+        DialogsList dialogsListView = findViewById(R.id.dialogsList);
+        dialogsListView.setAdapter(adapter);
     }
 
 /* OnClick Methods
 ***************************************************************************************************/
 
-
-
-
-    public void onDialogClick(DefaultDialog dialog) {
+    public void onDialogClick(Dialog dialog) {
         Intent intent = new Intent(this, MessageListActivity.class);
         intent.putExtra("dialog", dialog);
         intent.putExtra("this_user", this_user);
@@ -123,46 +107,59 @@ public class DialogListActivity extends AppCompatActivity {
 /* Firebase related Methods
 ***************************************************************************************************/
 
+    // TODO
     private void setDialogListener(){
-        list_reg =
-                mFirestore.collection("conversations")
-                        .whereArrayContains("members", this_user.getUsername())
-                        .addSnapshotListener((queryDocumentSnapshots, e) -> {
-                            if (e != null) Log.w(TAG, "Error in attaching listener.", e);
-                            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
-                                for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
+        list_regs.add(
+        mFirestore.collection("dialogs")
+                .whereArrayContains("userIds", this_user.getId())
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (e != null) Log.w(TAG, "Error in attaching listener.", e);
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentChange docChange : queryDocumentSnapshots.getDocumentChanges()) {
 
-                                    ChatRoom chatroom = docChange.getDocument().toObject(ChatRoom.class);
-                                    chatroom.setId(docChange.getDocument().getId());
+                            // Get dialog object from results
+                            Dialog dialog = docChange.getDocument().toObject(Dialog.class);
+                            dialog.setId(docChange.getDocument().getId());
 
-                                    // Update RecyclerView Adapter base on type of change
-                                    if (docChange.getType() == DocumentChange.Type.ADDED && !chatrooms.contains(chatroom)){ // ADDED?
-                                        Log.d(TAG, "Document added: " + chatroom.getName());
-                                        adapter.addChatroom(-1, chatroom);
+                            // Update RecyclerView Adapter base on type of change
+                            if (docChange.getType() == DocumentChange.Type.ADDED) addNewDialog(dialog);
+                            else if (docChange.getType() == DocumentChange.Type.REMOVED) removeDialog(dialog);
+                            else updateDialog(dialog); // MODIFIED
+                        } Log.d(TAG, queryDocumentSnapshots.size() + " rooms uploaded!");
+                    }
+                }));
+    }
 
-                                        // Came back from creating new chatroom?
-                                        if (selected_chatroom_index == chatrooms.size()-1)
-                                            onShortClick(selected_chatroom_index); // Go to chatroom
-                                    }
-                                    else {
-                                        // Get Existing Message position
-                                        int position = chatrooms.indexOf(chatroom);
-                                        if (position < 0) {
-                                            Log.e(TAG, "Message not found in list! " + chatroom.getName());
-                                            break;
-                                        }
-                                        // REMOVED ?
-                                        if (docChange.getType() == DocumentChange.Type.REMOVED){
-                                            Log.d(TAG, "Document removed: " + chatroom.getName());
-                                            adapter.removeChatroom(position);
-                                        }
-                                        else { // MODIFIED
-                                            Log.d(TAG, "Document modified: " + chatroom.getName());
-                                            adapter.updateChatroom(position, chatroom);
-                                        }
-                                    }
-                                } Log.d(TAG, queryDocumentSnapshots.size() + " rooms uploaded!");
-                            }
-                        });
+    // Sets a listener to latest message in a dialog so time_stamp gets updated real time
+    // Then, it adds the updated dialog to the sorted list
+    private void addNewDialog(Dialog dialog) {
+        Log.d(TAG, "Document added: " + dialog.getId());
+        String address = "dialogs/" + dialog.getId() + "/messages";
+
+        list_regs.add(
+        mFirestore.collection(address)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener((queryDocumentSnapshots, e) -> {
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        DocumentChange docChange = queryDocumentSnapshots.getDocumentChanges().get(0);
+                        Log.d(TAG, "Last message is: " + docChange.getDocument().getData());
+                        dialog.setLastMessage(docChange.getDocument().toObject(Message.class));
+                    }
+                    adapter.upsertItem(dialog);     // Updates dialog if already exists (inserts otherwise)
+                    Log.d(TAG, dialog.getDialogName() + " ADDED DIALOG");
+                }));
+    }
+
+    //TODO needs more testing
+    private void updateDialog(Dialog dialog) {
+        Log.d(TAG, "Document modified: " + dialog.getId());
+       adapter.updateItemById(dialog);
+    }
+
+    // TODO needs testing
+    private void removeDialog(Dialog dialog) {
+        Log.d(TAG, "Document removed: " + dialog.getId());
+        adapter.deleteById(dialog.getId());
     }
 }
